@@ -39,7 +39,7 @@ Description | Read (publish) | Write (subscribe) | Development state
 ------------|-------------|----------------|-------------------
 ID | [x] | [ ] | [ ]
 Name | [x] | [ ] | [ ]
-Power state | [x] | [ ] | [ ]
+Power state | [x] | - [x] | [ ]
 
 
 
