@@ -18,28 +18,28 @@ I am using [libCEC](https://github.com/Pulse-Eight/libcec)
 
 #### This device (the device this client is running on) 
 
-Description | Read (publish) | Write (subscribe) | Development state
+Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
-| Name | [x] | [x] |  [ ]
+Name | YES | YES | NO
  
  
  
 #### Main device (e.g. TV) 
 
 
-Description | Read (publish) | Write (subscribe) | Development state
+Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
-Power state | [x] | [x]| [ ]
-Active device (ID) | [x] | [x] | [ ]
+Power state | YES | YES | NO
+Active device (ID) | YES | YES | NO
 
 
 #### Other connected Devices
 
-Description | Read (publish) | Write (subscribe) | Development state
+Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
-ID | [x] | [ ] | [ ]
-Name | [x] | [ ] | [ ]
-Power state | [x] | - [x] | [ ]
+ID | YES | NO | NO
+Name | YES | NO | NO
+Power state | YES | YES | NO
 
 
 
