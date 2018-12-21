@@ -46,4 +46,4 @@ TODO:
 - [ ] switch to cmake
 - [ ] include apache paho
 - [ ] unit tests
-
+- [ ] instruction for library installation/cmake arguments
