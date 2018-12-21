@@ -42,5 +42,8 @@ Name | YES | NO | NO
 Power state | YES | YES | NO
 
 
-
-
+TODO:
+- [ ] switch to cmake
+- [ ] include apache paho
+- [ ] unit tests
+- [ ] instruction for library installation/cmake arguments
