@@ -41,10 +41,12 @@ ID | YES | NO | NO
 Name | YES | NO | NO
 Active | YES | NO | NO
 Power state | YES | YES | NO
+Type | YES | NO | NO
+
 
 
 TODO:
-- [ ] switch to cmake
-- [ ] include apache paho
+- [x] switch to cmake
+- [x] include apache paho
 - [ ] unit tests
 - [ ] instruction for library installation/cmake arguments
