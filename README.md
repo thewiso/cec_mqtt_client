@@ -53,3 +53,4 @@ TODO:
 - [ ] log file 
 - [ ] TODOs in files
 - [ ] subdirectories for different topics in include&src (properties, main, model)
+- [ ] run application as daemon
