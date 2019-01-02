@@ -52,3 +52,5 @@ TODO:
 - [ ] instruction for library installation/cmake arguments
 - [ ] log file 
 - [ ] TODOs in files
+- [ ] subdirectories for different topics in include&src (properties, main, model)
+- [ ] run application as daemon
