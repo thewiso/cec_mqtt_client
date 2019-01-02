@@ -50,4 +50,5 @@ TODO:
 - [x] include apache paho
 - [ ] unit tests
 - [ ] instruction for library installation/cmake arguments
-- [ ] log file
+- [ ] log file 
+- [ ] TODOs in files
