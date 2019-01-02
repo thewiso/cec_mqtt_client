@@ -1,14 +1,27 @@
 #include "cec_mqtt_client_properties.h"
+#include "string_property_holder.h"
+#include "int_property_holder.h"
 
 CecMqttClientProperties::CecMqttClientProperties() : Properties(){
     //declare defaults
-    clientId = "TV_CEC_CLIENT";
+    mqttClientId = "TV_CEC_CLIENT";
+    mqttTopicPrefix = "livingRoom/devices/TV";    
 }
 
 void CecMqttClientProperties::fillPropertyMap(){
-    propertyKey2Value["NamedPipePath"] = &clientId;
+    propertyHolders.push_back(new StringPropertyHolder("MQTT_CLIENT_ID", &mqttClientId));
+    propertyHolders.push_back(new StringPropertyHolder("MQTT_TOPIC_PREFIX", &mqttTopicPrefix));
+    propertyHolders.push_back(new StringPropertyHolder("MQTT_BROKER_ADRESS", &mqttBrokerAdress, true));
 }
 
-std::string CecMqttClientProperties::getClientId(){
-    return clientId;
+std::string CecMqttClientProperties::getMqttClientId(){
+    return mqttClientId;
+}
+
+std::string CecMqttClientProperties::getMqttBrokerAdress(){
+    return mqttBrokerAdress;
+}
+
+std::string CecMqttClientProperties::getMqttTopicPrefix(){
+    return mqttTopicPrefix;
 }

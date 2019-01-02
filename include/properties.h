@@ -1,9 +1,12 @@
-#include <map>
+#pragma once
+
+#include <list>
 #include <string>
 #include <fstream>
+#include "property_holder.h"
 
 class Properties{
-    typedef std::map<std::string, std::string*> String2StringPointerMap;
+    typedef std::list<PropertyHolder*> PropertyHolderList;
 
     public:
         void readFile(std::string filePath);
@@ -11,6 +14,8 @@ class Properties{
     protected:
         void parseFile(std::ifstream &fileStream);
         virtual void fillPropertyMap() = 0;
+        void checkMandatoryProperties();
         
-        String2StringPointerMap propertyKey2Value;
+
+        PropertyHolderList propertyHolders;
 };
