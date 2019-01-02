@@ -1,26 +1,41 @@
 #include <iostream>
+#include <signal.h>
+#include <thread>
+#include <chrono>
+#include <atomic>
+
 #include "cec_mqtt_client_properties.h"
 #include "mqtt_client.h"
 #include "cec_client.h"
 #include "cec_mqtt_client_model.h"
 
+//TODO: use lambda in signal function?
+std::atomic<bool> interrupt(false); 
+void handle_signal(int signal)
+{
+    interrupt.store(true);
+}
+
 
 int main(int argc, char* argv[])
 {
+    
+    // signal(SIGINT, handle_signal);
+
     CecMqttClientProperties properties;
     properties.readFile("cec_mqtt_client.conf");
 
-     MqttClient *mqttClient = new MqttClient(properties);
-
-    CecClient cecClient(properties);
-    // cecClient.scanDevices();
-
-
     CecMqttClientModel model(properties.getMqttTopicPrefix());
-    model.getGeneralNode()->registerChangeHandler(std::bind( &MqttClient::modelNodeChangeHandler, mqttClient, std::placeholders::_1, std::placeholders::_2), true);
-    ModelNode *activeSource = new ModelNode("activeSourceId", true, "-1");
-    model.getGeneralNode()->addChild(activeSource);
-   
-   
+    
+    MqttClient mqttClient(properties, model);
+    mqttClient.init();
+
+    CecClient cecClient(properties, model);
+    cecClient.init();
+
+    // while(!interrupt.load()){
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    // }
+
     return 0;
 }

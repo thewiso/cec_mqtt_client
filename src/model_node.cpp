@@ -34,7 +34,7 @@ void ModelNode::registerChangeHandler(OnModelNodeChangeFunction onModelNodeChang
     if(passToChildren){
         modelChangeHandlersForChildren.push_back(onModelNodeChange);
         for(ModelNodePointerList::iterator it = children.begin(); it != children.end(); ++it){
-            (*it)->registerChangeHandler(onModelNodeChange);
+            (*it)->registerChangeHandler(onModelNodeChange, true);
         }
     }
 }
@@ -45,7 +45,7 @@ void ModelNode::registerChangeHandler(ModelChangeHandlerVector onModelNodeChange
     if(passToChildren){
         modelChangeHandlersForChildren.insert(modelChangeHandlersForChildren.end(), onModelNodeChanges.begin(), onModelNodeChanges.end());
         for(ModelNodePointerList::iterator it = children.begin(); it != children.end(); ++it){
-            (*it)->registerChangeHandler(onModelNodeChanges);
+            (*it)->registerChangeHandler(onModelNodeChanges, true);
         }
     }
 }
@@ -54,7 +54,7 @@ void ModelNode::addChild(ModelNode *child){
     child->parent = this;
     children.push_back(child);
 
-    child->registerChangeHandler(modelChangeHandlersForChildren);
+    child->registerChangeHandler(modelChangeHandlersForChildren, true);
     child->triggerChange(ModelNodeChangeType::INSERT);
 }
 
@@ -76,9 +76,10 @@ void ModelNode::setValue(std::string value, bool triggerChange){
     if(!valueNode){
        throw std::runtime_error("Illegal operation: Can not set value on a non-value node");
     }
-
-    triggerChange = triggerChange && this->value == value;
+    
+    triggerChange = triggerChange && this->value != value;
     this->value = value;
+    
     if(triggerChange){
         this->triggerChange(ModelNodeChangeType::UPDATE);
     }

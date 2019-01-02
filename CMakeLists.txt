@@ -16,6 +16,8 @@ set(SRCFILES
     ${SRCDIR}/int_property_holder.cpp
     ${SRCDIR}/cec_mqtt_client_model.cpp
     ${SRCDIR}/model_node.cpp
+    ${SRCDIR}/general_model.cpp
+    ${SRCDIR}/device_model.cpp
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})

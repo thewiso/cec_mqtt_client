@@ -8,31 +8,31 @@
 using std::cout;
 using std::endl;
 
-#include <libcec/cec.h>
 #include <libcec/cecloader.h>
 #include "bcm_host.h"
 
 
-CecClient::CecClient(CecMqttClientProperties properties){
+CecClient::CecClient(CecMqttClientProperties properties, CecMqttClientModel &model){
     this->properties = properties;
+    this->model = &model;
+    this->cecAdapter = nullptr;
 }
 
 CecClient::~CecClient(){
-    
+    if(cecAdapter != nullptr){
+        cecAdapter->Close();
+        UnloadLibCec(cecAdapter);
+    }
 }
 
-void CecClient::scanDevices(){
-    
-    // Initialise the graphics pipeline for the raspberry pi. Yes, this is necessary.
+void CecClient::init(){
     bcm_host_init();
 
-    // Set up the CEC config and specify the keypress callback function
     // CEC::ICECCallbacks        cec_callbacks;
     CEC::libcec_configuration cec_config;
     cec_config.Clear();
     // cec_callbacks.Clear();
 
-    
     const std::string devicename("CECExample");
     devicename.copy(cec_config.strDeviceName, std::min(devicename.size(),13u) );
     
@@ -43,45 +43,42 @@ void CecClient::scanDevices(){
 
     // cec_callbacks.keyPress    = &on_keypress;
 
-    // Get a cec adapter by initialising the cec library
-    CEC::ICECAdapter* cec_adapter = LibCecInitialise(&cec_config);
-    if( !cec_adapter )
+    cecAdapter = LibCecInitialise(&cec_config);
+    if( !cecAdapter )
     { 
+        //TODO: throw exception?
         std::cerr << "Failed loading libcec.so\n"; 
-        // return 1; 
     }
-
-    // Try to automatically determine the CEC devices 
     std::array<CEC::cec_adapter_descriptor, 10> devices;
-    int8_t devices_found = cec_adapter->DetectAdapters(devices.data(), devices.size(), nullptr, false /*quickscan*/);
+    int8_t devices_found = cecAdapter->DetectAdapters(devices.data(), devices.size(), nullptr, false /*quickscan*/);
     if( devices_found <= 0)
     {
         std::cerr << "Could not automatically determine the cec adapter devices\n";
-        UnloadLibCec(cec_adapter);
-        // return 1;
-    }
-    for(int i=0; i < devices_found; i++) {
-        cout << devices[i].strComName << " " << devices[i].adapterType << "\n";
+        UnloadLibCec(cecAdapter);
+        //TODO: throw exception
     }
 
-    cout << "Open: " << std::to_string(cec_adapter->Open(devices[0].strComName) )  << "\n";
+    if(cecAdapter->Open(devices[0].strComName)){
+        //TODO: throw exception
+    }
+    updateModel();
+}
 
-    cout << std::to_string(cec_adapter->PowerOnDevices())  << "\n";
-    // cout << std::to_string(cec_adapter->StandbyDevices(CEC::CECDEVICE_TV))  << "\n";
+void CecClient::updateModel(){
 
-   // cout << std::to_string(cec_adapter->AudioToggleMute()) << "\n";
+    // cout << std::to_string(cecAdapter->PowerOnDevices())  << "\n";
 
-   cout << "Adresses:\n";
-   CEC::cec_logical_addresses logicalAdresses = cec_adapter->GetActiveDevices();
-   int logicalAdressesLength = (sizeof(logicalAdresses.addresses)/sizeof(*logicalAdresses.addresses));
-    for(int i=0; i<logicalAdressesLength;i++){
-        if(logicalAdresses[i]){
-            cout << cec_adapter->GetDeviceOSDName((CEC::cec_logical_address)i) << "\n";
-        }
-    } 
+//     cout << "Adresses:\n";
+    // CEC::cec_logical_addresses logicalAdresses = cecAdapter->GetActiveDevices();
+//    int logicalAdressesLength = (sizeof(logicalAdresses.addresses)/sizeof(*logicalAdresses.addresses));
+//     for(int i=0; i<logicalAdressesLength;i++){
+//         if(logicalAdresses[i]){
+//             cout << cecAdapter->GetDeviceOSDName((CEC::cec_logical_address)i) << "\n";
+//         }
+//     } 
+    model->getGeneralModel()->getActiveSourceDeviceId()->setValue(std::to_string((int)cecAdapter->GetActiveSource()));
+
+
     
-    
-    // Close down and cleanup
-    cec_adapter->Close();
-    UnloadLibCec(cec_adapter);
+
 }

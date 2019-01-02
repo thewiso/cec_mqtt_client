@@ -6,15 +6,10 @@
 const int MqttClient::CONNECT_TIME_OUT_MILLISECONDS = 3000;
 const int MqttClient::MAX_CONNECT_ATTEMPTS = 3;
 
-MqttClient::MqttClient(CecMqttClientProperties properties){
+MqttClient::MqttClient(CecMqttClientProperties properties, CecMqttClientModel &model){
     this->properties = properties;
-    client = new mqtt::client(properties.getMqttBrokerAdress(), properties.getMqttClientId());
-
-    //TODO: QOS
-    mqtt::connect_options connOpts;
-    connOpts.set_keep_alive_interval(20);
-    connOpts.set_clean_session(true);
-    client->connect(connOpts);
+    this->model = &model;
+    this->client = new mqtt::client(properties.getMqttBrokerAdress(), properties.getMqttClientId());
 }
 
 MqttClient::~MqttClient(){
@@ -22,6 +17,18 @@ MqttClient::~MqttClient(){
         client->disconnect();
     }
     delete client;
+}
+
+void MqttClient::init(){
+    model->registerChangeHandler(std::bind( &MqttClient::modelNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
+     //TODO: QOS
+    mqtt::connect_options connOpts;
+    connOpts.set_keep_alive_interval(20);
+    connOpts.set_clean_session(true);
+    client->connect(connOpts);
+    //TODO: handle connection fail
+
+
 }
 
 bool MqttClient::connect(){
@@ -47,7 +54,9 @@ bool MqttClient::connect(){
 }
 
 void MqttClient::modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType){
-    publish(modelNode.getMqttPath(), modelNode.getValue());
+    if(modelNode.isValueNode() && modelNodeChangeType == ModelNodeChangeType::UPDATE){
+        publish(modelNode.getMqttPath(), modelNode.getValue());
+    }
 }
 
 void MqttClient::publish(std::string topic, std::string value){
