@@ -30,7 +30,7 @@ Name | YES | YES | NO
 Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
 Power state | YES | YES | NO
-Active device (ID) | YES | YES | NO
+Active source (ID) | YES | YES | NO
 
 
 #### Other connected Devices
@@ -39,11 +39,16 @@ Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
 ID | YES | NO | NO
 Name | YES | NO | NO
+Active | YES | NO | NO
 Power state | YES | YES | NO
+Type | YES | NO | NO
+
 
 
 TODO:
-- [ ] switch to cmake
-- [ ] include apache paho
+- [x] switch to cmake
+- [x] include apache paho
 - [ ] unit tests
 - [ ] instruction for library installation/cmake arguments
+- [ ] log file 
+- [ ] TODOs in files
