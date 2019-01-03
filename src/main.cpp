@@ -19,23 +19,23 @@ void handle_signal(int signal)
 
 int main(int argc, char* argv[])
 {
-    
-    // signal(SIGINT, handle_signal);
+    //TODO: smart pointer!!
+    signal(SIGINT, handle_signal);
 
     CecMqttClientProperties properties;
     properties.readFile("cec_mqtt_client.conf");
 
     CecMqttClientModel model(properties.getMqttTopicPrefix());
     
-    MqttClient mqttClient(properties, model);
-    mqttClient.init();
+    MqttClient *mqttClient = new MqttClient(properties, model);
+    CecClient *cecClient = CecClient::getInstance(properties, model);
 
-    CecClient cecClient(properties, model);
-    cecClient.init();
+    mqttClient->init();
+    cecClient->init();
 
-    // while(!interrupt.load()){
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    // }
+    while(!interrupt.load()){
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
 
     return 0;
 }

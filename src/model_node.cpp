@@ -77,11 +77,14 @@ void ModelNode::setValue(std::string value, bool triggerChange){
        throw std::runtime_error("Illegal operation: Can not set value on a non-value node");
     }
     
+    //a change of the value and the resulting trigger of the changeHandlers should not be interrupted by parallel changes 
+    valueSetMutex.lock();
     triggerChange = triggerChange && this->value != value;
     this->value = value;
     
     if(triggerChange){
         this->triggerChange(ModelNodeChangeType::UPDATE);
     }
+    valueSetMutex.unlock();
 }
 

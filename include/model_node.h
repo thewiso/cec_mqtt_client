@@ -4,6 +4,7 @@
 #include <map>
 #include <functional>
 #include <string>
+#include <mutex>
 
 enum ModelNodeChangeType{
     INSERT,
@@ -37,10 +38,13 @@ class ModelNode{
         ModelNode *parent;
         ModelNodePointerList children;
         std::string value;
+        std::mutex valueSetMutex;
         bool valueNode;
         //using 2 lists instead of a map because functions cannot be compared
         ModelChangeHandlerVector modelChangeHandlers;
         ModelChangeHandlerVector modelChangeHandlersForChildren;
+        
+
         
 };
 
