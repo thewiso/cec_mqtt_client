@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     //TODO: pattern?
     //TODO: log file path, size, level as propertyfiles
     //1024 * 1024 * 5 = 5 Mebibyte, 2 log filesspdlog::level::debug
-    auto sharedFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("logs/cec_mqtt_client_log.txt", 1024 * 1024 * 5, 2);
+    auto sharedFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("cec_mqtt_client_log.txt", 1024 * 1024 * 5, 2);
     auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     //TODO: property file: boolean logToConsole
 

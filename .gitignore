@@ -2,4 +2,4 @@
 build/*
 raspberry_build/*
 lib/*
-logs/
+cec_mqtt_client_log.txt

@@ -78,6 +78,7 @@ const std::string &ModelNode::getValue(){
 }
 
 void ModelNode::setValue(const std::string &value, bool triggerChange){
+    //TODO: log whole mqttPath if trace level is set 
     logger.get()->trace("setValue with value '{}' on node '{}'", value, mqttPathSegment);
     if(!valueNode){
        throw std::runtime_error("Illegal operation: Can not set value on non-value node '" + mqttPathSegment + "'");
