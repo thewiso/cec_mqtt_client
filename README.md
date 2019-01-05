@@ -55,3 +55,4 @@ TODO:
 - [ ] run application as daemon
 - [ ] code doc
 - [ ] user doc
+- [ ] git release tag
