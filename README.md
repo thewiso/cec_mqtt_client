@@ -49,7 +49,7 @@ TODO:
 - [x] switch to cmake
 - [x] include apache paho
 - [ ] instruction for library installation/cmake arguments
-- [ ] log file 
+- [x] log file 
 - [ ] TODOs in files
 - [ ] subdirectories for different topics in include&src (properties, main, model)
 - [ ] run application as daemon
