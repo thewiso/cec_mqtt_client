@@ -20,6 +20,7 @@ void handle_signal(int signal)
 int main(int argc, char* argv[])
 {
     //TODO: smart pointer!!
+    //TODO: general update command
     signal(SIGINT, handle_signal);
 
     CecMqttClientProperties properties;
@@ -37,5 +38,13 @@ int main(int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
+    //FIXME:
+    //update activeSourceDeviceId when turning tv on / off
+    //update device 
+
+    //TODO: TEST
+    //toggle activeDevice
+    //network disconnect mqtt
+    //hdmi disconnect cec
     return 0;
 }

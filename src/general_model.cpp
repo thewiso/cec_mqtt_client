@@ -2,11 +2,11 @@
 
 
 GeneralModel::GeneralModel(): ModelNode("general"){
-    this->activeSourceDeviceId = new ModelNode("activeSourceDeviceId", true);
+    this->activeSourceLogicalAddress = new ModelNode("activeSourceLogicalAddress", true);
 
-    addChild(activeSourceDeviceId);
+    addChild(activeSourceLogicalAddress);
 }
 
-ModelNode *GeneralModel::getActiveSourceDeviceId(){
-    return activeSourceDeviceId;
+ModelNode *GeneralModel::getActiveSourceLogicalAddress(){
+    return activeSourceLogicalAddress;
 }

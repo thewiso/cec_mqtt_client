@@ -5,17 +5,15 @@
 class DeviceModel: public ModelNode{
 
     public:
-        DeviceModel(std::string deviceId);
-        ModelNode *getId();
+        DeviceModel(std::string mqttPathSegment);
         ModelNode *getName();
-        ModelNode *getActiveState();
-        ModelNode *getPowerState();
-        ModelNode *getType();
+        ModelNode *getIsActive();
+        ModelNode *getPowerStatus();
+        ModelNode *getLogicalAddress();
         
     private:
-        ModelNode *id;
         ModelNode *name;
-        ModelNode *activeState;
-        ModelNode *powerState;
-        ModelNode *type;
+        ModelNode *isActive;
+        ModelNode *powerStatus;
+        ModelNode *logicalAddress;
 };

@@ -4,19 +4,20 @@
 #include "general_model.h"
 #include "device_model.h"
 #include <vector>
+#include <utility> 
 
 
 class CecMqttClientModel: public ModelNode{
     
     public: 
         CecMqttClientModel(std::string mqttRootPathSegment);
-        // ModelNode *getCommandNode();
-        // ModelNode *getDevicesNode();
         GeneralModel *getGeneralModel();
+        std::vector<DeviceModel*> getDeviceModels();
+        std::pair<DeviceModel*, bool> getOrCreateDeviceModel(std::string logicalAddress);
 
     private:
-        // ModelNode *commandNode;
-        // ModelNode *devicesNode;
+        std::vector<DeviceModel*> deviceModels;
+        ModelNode *deviceParentNode;
         GeneralModel *generalModel;
     
 

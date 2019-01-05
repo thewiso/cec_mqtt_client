@@ -5,8 +5,8 @@
 class GeneralModel: public ModelNode{
     public:
         GeneralModel();
-        ModelNode *getActiveSourceDeviceId();
+        ModelNode *getActiveSourceLogicalAddress();
 
     private:
-        ModelNode *activeSourceDeviceId;
+        ModelNode *activeSourceLogicalAddress;
 };

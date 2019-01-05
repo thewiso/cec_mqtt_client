@@ -1,5 +1,9 @@
 #include "cec_client.h"
+#include "utilities.h"
 
+#include <algorithm> 
+#include <utility>
+#include <vector>
 #include <array>
 #include <string>
 #include <iostream>
@@ -12,6 +16,12 @@ using std::endl;
 #include "bcm_host.h"
 
 CecClient *CecClient::singleton = nullptr;
+//opcodes from cec_commands that should trigger a model update
+const CEC::cec_opcode CecClient::RELEVANT_OPCODES[] = {
+    CEC::cec_opcode::CEC_OPCODE_ACTIVE_SOURCE,      //is sent if TV is switched ON and
+                                                    //is sent if external Device is switchted ON/OFF
+    CEC::cec_opcode::CEC_OPCODE_STANDBY             //is sent if TV is switched OFF
+};
 
 CecClient::CecClient(CecMqttClientProperties properties, CecMqttClientModel &model){
     this->properties = properties;
@@ -19,6 +29,7 @@ CecClient::CecClient(CecMqttClientProperties properties, CecMqttClientModel &mod
     this->adapter = nullptr;
     this->callbacks = new CEC::ICECCallbacks();
     this->config = new CEC::libcec_configuration();
+    //TODO: add model listener
 
 }
 
@@ -30,7 +41,7 @@ CecClient::~CecClient(){
 }
 
 CecClient *CecClient::getInstance(){
-    //private method, so it can only be called from the static callback handlers when the instance is already created
+    //private method, so it can only be called from the callback handlers when the instance is already created
     return singleton;
 }
 
@@ -43,8 +54,30 @@ CecClient *CecClient::getInstance(CecMqttClientProperties properties, CecMqttCli
 }
 
 void CecClient::static_sourceActivatedHandler(void* UNUSED, const CEC::cec_logical_address logicalAddress, const uint8_t bActivated){
-    getInstance()->sourceActivatedHandler(logicalAddress, bActivated);
+    getInstance()->updateGeneralModel();
+    //TODO: debug log
 }
+
+void CecClient::static_commandReceivedHandler(void* UNUSED, const CEC::cec_command* command){
+    //if no poll command
+    if(command->opcode_set == 1){
+        if (std::find(std::begin(RELEVANT_OPCODES), std::end(RELEVANT_OPCODES), command->opcode) != std::end(RELEVANT_OPCODES)){
+            getInstance()->updateDeviceModel();
+            getInstance()->updateGeneralModel();
+        }
+        //TODO: debug log
+        // cout << "from " << std::dec << (int)command->initiator << " to " << (int)command->destination << " command: " << std::hex << "0x" << (int)command->opcode << "\n";
+    }
+    
+}
+
+void CecClient::static_alertHandler(void* UNUSED, const CEC::libcec_alert alert, const CEC::libcec_parameter param){
+    cout << "alert\n";
+        //TODO: alert callbacks usage for connection lost handling!
+        //TODO: debug log
+
+}
+        
 
 
 void CecClient::init(){
@@ -52,13 +85,14 @@ void CecClient::init(){
 
     callbacks->Clear();
     callbacks->sourceActivated = &static_sourceActivatedHandler;
-    //TODO: alert callbacks usage for connection lost handling!
+    callbacks->commandReceived = &static_commandReceivedHandler;
+    callbacks->alert = &static_alertHandler;
 
     config->Clear();    
     config->clientVersion = CEC::LIBCEC_VERSION_CURRENT;
     config->bActivateSource = 0;
     config->callbacks = callbacks;
-    //TODO: device type from configuration file
+    //TODO: logical device from configuration file
     config->deviceTypes.Add(CEC::CEC_DEVICE_TYPE_PLAYBACK_DEVICE);
 
     //TODO: devicename from configuration file
@@ -83,32 +117,58 @@ void CecClient::init(){
     if(adapter->Open(devices[0].strComName)){
         //TODO: throw exception
     }
-    updateModel();
+    updateGeneralModel();
+    updateDeviceModel();
 }
 
-void CecClient::updateModel(){
-
-    // cout << std::to_string(adapter->PowerOnDevices())  << "\n";
-
-//     cout << "Adresses:\n";
-    // CEC::cec_logical_addresses logicalAdresses = adapter->GetActiveDevices();
-//    int logicalAdressesLength = (sizeof(logicalAdresses.addresses)/sizeof(*logicalAdresses.addresses));
-//     for(int i=0; i<logicalAdressesLength;i++){
-//         if(logicalAdresses[i]){
-//             cout << adapter->GetDeviceOSDName((CEC::cec_logical_address)i) << "\n";
-//         }
-//     } 
+void CecClient::updateGeneralModel(){
     adapterMutex.lock();
-    model->getGeneralModel()->getActiveSourceDeviceId()->setValue(std::to_string((int)adapter->GetActiveSource()));
-
+    CEC::cec_logical_address activeSource = adapter->GetActiveSource();
     adapterMutex.unlock();
 
+    model->getGeneralModel()->getActiveSourceLogicalAddress()->setValue(Utilities::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(activeSource));
+
+    //TODO: updates after commands should be triggered (name changed -> configuration changed?)
 }
-#include <thread>
-void CecClient::sourceActivatedHandler(const CEC::cec_logical_address logicalAddress, const uint8_t bActivated){
+
+void CecClient::updateDeviceModel(){
+    //TODO: log debug duration of method
+    //TODO: when to use adapter->RescanActiveDevices ?
     adapterMutex.lock();
-    int activeSource = (int)adapter->GetActiveSource();
+    CEC::cec_logical_addresses activeDevices = adapter->GetActiveDevices();
     adapterMutex.unlock();
 
-    model->getGeneralModel()->getActiveSourceDeviceId()->setValue(std::to_string(activeSource));
+    int activeDevicesLength = (sizeof(activeDevices.addresses)/sizeof(*activeDevices.addresses));
+    std::vector<DeviceModel*> deviceModels = model->getDeviceModels();
+
+    for(int i=0; i<activeDevicesLength; i++){
+        CEC::cec_logical_address currentAddress = (CEC::cec_logical_address)i;
+        std::string currentAddressString = Utilities::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(currentAddress);
+        
+        if(activeDevices[i]){
+            
+            adapterMutex.lock();
+                std::string odsName = adapter->GetDeviceOSDName(currentAddress);
+                CEC::cec_power_status powerStatus = adapter->GetDevicePowerStatus(currentAddress);
+            adapterMutex.unlock();
+
+            std::pair<DeviceModel*, bool> activeDevicePair = model->getOrCreateDeviceModel(currentAddressString);
+            DeviceModel *activeDevice = activeDevicePair.first;
+            activeDevice->getName()->setValue(odsName);
+            activeDevice->getIsActive()->setValue(Utilities::TRUE_STRING_LITERAL);
+            activeDevice->getPowerStatus()->setValue(Utilities::CEC_POWER_STATUS_2_STRING_LITERAL.at(powerStatus));
+
+            if(activeDevicePair.second){
+                //TODO: register change handler on new model
+            }
+        }else{
+            //set activity and power state of other already created, now inactive devices
+            std::vector<DeviceModel*>::iterator iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [currentAddressString] (DeviceModel *deviceModel) { return deviceModel->getLogicalAddress()->getValue() == currentAddressString; } ); 
+            if(iterator != deviceModels.end()){
+                (*iterator)->getIsActive()->setValue(Utilities::FALSE_STRING_LITERAL);
+                (*iterator)->getPowerStatus()->setValue(Utilities::CEC_POWER_STATUS_2_STRING_LITERAL.at(CEC::cec_power_status::CEC_POWER_STATUS_UNKNOWN));
+            }
+
+        }
+    } 
 }
