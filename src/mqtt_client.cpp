@@ -6,10 +6,11 @@
 const int MqttClient::CONNECT_TIME_OUT_MILLISECONDS = 3000;
 const int MqttClient::MAX_CONNECT_ATTEMPTS = 3;
 
-MqttClient::MqttClient(CecMqttClientProperties properties, CecMqttClientModel &model){
+MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger){
     this->properties = properties;
-    this->model = &model;
-    this->client = new mqtt::client(properties.getMqttBrokerAdress(), properties.getMqttClientId());
+    this->model = model;
+    this->client = new mqtt::client(this->properties.getMqttBrokerAdress(), this->properties.getMqttClientId());
+    this->logger = logger;
 }
 
 MqttClient::~MqttClient(){

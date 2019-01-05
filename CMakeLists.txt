@@ -26,39 +26,48 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 #executatble definition
 add_executable(cec_mqtt_client ${SRCFILES})
 
-#include directories
+#Custom paths for libraries
+if(NOT DEFINED INCLUDE_BCM_HOST_DIR)
+    set(INCLUDE_BCM_HOST_DIR /opt/vc/include/)
+endif(NOT DEFINED INCLUDE_BCM_HOST_DIR)
 
+if(NOT DEFINED INCLUDE_SPDLOG_DIR)
+    set(INCLUDE_SPDLOG_DIR lib)
+endif(NOT DEFINED INCLUDE_SPDLOG_DIR)
+
+#include directories
 target_include_directories(cec_mqtt_client 
     PUBLIC include
-    PUBLIC /opt/vc/include/
+    PUBLIC ${INCLUDE_BCM_HOST_DIR}      #BCM_HOST
+    PUBLIC ${INCLUDE_SPDLOG_DIR}        #SPDLOG
 )
-#TODO: make include directories settable via command parameter 
 
 #Custom paths for libraries
-if(NOT DEFINED BCM_HOST_DIR)
-    set(BCM_HOST_DIR /opt/vc/lib)
-endif(NOT DEFINED BCM_HOST_DIR)
+if(NOT DEFINED LIB_BCM_HOST_DIR)
+    set(LIB_BCM_HOST_DIR /opt/vc/lib)
+endif(NOT DEFINED LIB_BCM_HOST_DIR)
 
 #use e.g. -DPAHO_MQTT_C_DIR=/foo/bar as command parameter to specify a custom directory for cmake to search for the library
 
 #libraries
-find_library(PAHO_MQTT_C    paho-mqtt3a     PATHS ${PAHO_MQTT_C_DIR})
-find_library(PAHO_MQTT_CPP  paho-mqttpp3    PATHS ${PAHO_MQTT_CPP_DIR})
-find_library(LIB_CEC        cec             PATHS ${LIB_CEC_DIR})
-find_library(BCM_HOST       bcm_host        PATHS ${BCM_HOST_DIR})
+find_library(LIB_PAHO_MQTT_C    paho-mqtt3a     PATHS ${LIB_PAHO_MQTT_C_DIR})
+find_library(LIB_PAHO_MQTT_CPP  paho-mqttpp3    PATHS ${LIB_PAHO_MQTT_CPP_DIR})
+find_library(LIB_LIB_CEC        cec             PATHS ${LIB_LIB_CEC_DIR})
+find_library(LIB_BCM_HOST       bcm_host        PATHS ${LIB_BCM_HOST_DIR})
 
-message(STATUS "Paho MQTT C found at    ${PAHO_MQTT_C}")
-message(STATUS "Paho MQTT C++ found at  ${PAHO_MQTT_CPP}")
-message(STATUS "LibCEC found at         ${LIB_CEC}")
-message(STATUS "BCM_HOST found at       ${BCM_HOST}")
+message(STATUS "Paho MQTT C found at    ${LIB_PAHO_MQTT_C}")
+message(STATUS "Paho MQTT C++ found at  ${LIB_PAHO_MQTT_CPP}")
+message(STATUS "LibCEC found at         ${LIB_LIB_CEC}")
+message(STATUS "BCM_HOST found at       ${LIB_BCM_HOST}")
 
 target_link_libraries(cec_mqtt_client 
-    ${PAHO_MQTT_C} 
-    ${PAHO_MQTT_CPP} 
-    ${LIB_CEC} 
-    ${BCM_HOST}
+    ${LIB_PAHO_MQTT_C} 
+    ${LIB_PAHO_MQTT_CPP} 
+    ${LIB_LIB_CEC} 
+    ${LIB_BCM_HOST}
     dl
 )
+#TODO: can dl be found everywhere?
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
