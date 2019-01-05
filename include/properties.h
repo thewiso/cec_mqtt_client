@@ -9,7 +9,7 @@ class Properties{
     typedef std::list<PropertyHolder*> PropertyHolderList;
 
     public:
-        void readFile(std::string filePath);
+        void readFile(const std::string &filePath);
 
     protected:
         void parseFile(std::ifstream &fileStream);

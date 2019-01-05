@@ -1,10 +1,15 @@
 #include "model_node.h"
+#include "utilities.h"
+
+#include "spdlog/spdlog.h"
+
 #include <stdexcept>
 
-ModelNode::ModelNode(std::string mqttPathSegment, bool valueNode, std::string value){
+ModelNode::ModelNode(const std::string &mqttPathSegment, bool valueNode, const std::string &value){
     this->parent = nullptr;
     this->mqttPathSegment = mqttPathSegment;
     this->valueNode = valueNode;
+    this->logger = spdlog::get(Utilities::GENERAL_LOGGER_NAME);
     
     if(valueNode){
         this->value = value;
@@ -28,7 +33,7 @@ void ModelNode::setParent(ModelNode *parent){
     this->parent = parent;
 }
 
-void ModelNode::registerChangeHandler(OnModelNodeChangeFunction onModelNodeChange, bool passToChildren){
+void ModelNode::registerChangeHandler(const OnModelNodeChangeFunction &onModelNodeChange, bool passToChildren){
     modelChangeHandlers.push_back(onModelNodeChange);
 
     if(passToChildren){
@@ -39,7 +44,7 @@ void ModelNode::registerChangeHandler(OnModelNodeChangeFunction onModelNodeChang
     }
 }
 
-void ModelNode::registerChangeHandler(ModelChangeHandlerVector onModelNodeChanges, bool passToChildren){
+void ModelNode::registerChangeHandler(const ModelChangeHandlerVector &onModelNodeChanges, bool passToChildren){
     modelChangeHandlers.insert(modelChangeHandlers.end(), onModelNodeChanges.begin(), onModelNodeChanges.end());
 
     if(passToChildren){
@@ -68,13 +73,14 @@ bool ModelNode::isValueNode(){
     return valueNode;
 }
 
-std::string ModelNode::getValue(){
+const std::string &ModelNode::getValue(){
     return value;
 }
 
-void ModelNode::setValue(std::string value, bool triggerChange){
+void ModelNode::setValue(const std::string &value, bool triggerChange){
+    logger.get()->trace("setValue with value '{}' on node '{}'", value, mqttPathSegment);
     if(!valueNode){
-       throw std::runtime_error("Illegal operation: Can not set value on a non-value node");
+       throw std::runtime_error("Illegal operation: Can not set value on non-value node '" + mqttPathSegment + "'");
     }
     
     //a change of the value and the resulting trigger of the changeHandlers should not be interrupted by parallel changes 

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-CecMqttClientModel::CecMqttClientModel(std::string mqttRootPathSegment): ModelNode(mqttRootPathSegment){
+CecMqttClientModel::CecMqttClientModel(const std::string &mqttRootPathSegment): ModelNode(mqttRootPathSegment){
     generalModel = new GeneralModel();
     deviceParentNode = new ModelNode("devices");
 
@@ -14,11 +14,11 @@ GeneralModel *CecMqttClientModel::getGeneralModel(){
     return generalModel;
 }
 
-std::vector<DeviceModel*> CecMqttClientModel::getDeviceModels(){
+const std::vector<DeviceModel*> &CecMqttClientModel::getDeviceModels(){
     return deviceModels;
 }
 
-std::pair<DeviceModel*, bool> CecMqttClientModel::getOrCreateDeviceModel(std::string logicalAddress){
+std::pair<DeviceModel*, bool> CecMqttClientModel::getOrCreateDeviceModel(const std::string &logicalAddress){
     std::vector<DeviceModel*>::iterator iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [logicalAddress] (DeviceModel *deviceModel) { return deviceModel->getLogicalAddress()->getValue() == logicalAddress; } ); 
 
     bool createDevice = iterator == deviceModels.end();

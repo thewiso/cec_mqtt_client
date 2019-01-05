@@ -4,7 +4,9 @@
 #include <sstream>
 #include <algorithm>
 
-void Properties::readFile(std::string filePath){
+#include "property_exception.h"
+
+void Properties::readFile(const std::string &filePath){
     std::ifstream fileStream;
     fileStream.open(filePath);
     if(fileStream.is_open()){
@@ -12,7 +14,7 @@ void Properties::readFile(std::string filePath){
         parseFile(fileStream);
         checkMandatoryProperties();
     }else{
-        throw std::runtime_error("PropertyFile " + filePath + " not found");
+        throw PropertyException("PropertyFile " + filePath + " not found");
     }
 }
 
@@ -46,7 +48,7 @@ void Properties::parseFile(std::ifstream &fileStream){
 void Properties::checkMandatoryProperties(){
     for(PropertyHolderList::iterator it = propertyHolders.begin(); it != propertyHolders.end(); ++it) {
         if((*it)->isMandatory() && !(*it)->isValueGiven()){
-            throw std::runtime_error("Mandatory property '" + (*it)->getName() + "' not defined in property file");
+            throw PropertyException("Mandatory property '" + (*it)->getName() + "' not defined in property file");
         }
     }
 }

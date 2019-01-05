@@ -15,17 +15,19 @@ class MqttClient{
         MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger);
         ~MqttClient();
         void modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
-        void init();
+        bool connect();
         
     private:
         static const int MAX_CONNECT_ATTEMPTS;
         static const int CONNECT_TIME_OUT_MILLISECONDS;
         
         mqtt::client *client;
+        mqtt::connect_options connOpts;
+        bool firstConnect;
         CecMqttClientProperties properties;
         CecMqttClientModel *model;
         std::shared_ptr<spdlog::logger> logger;
 
         void publish(std::string topic, std::string value);
-        bool connect();
+
 };

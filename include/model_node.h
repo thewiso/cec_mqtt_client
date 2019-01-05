@@ -5,6 +5,10 @@
 #include <functional>
 #include <string>
 #include <mutex>
+#include <memory>
+
+#include "spdlog/logger.h"
+
 
 enum ModelNodeChangeType{
     INSERT,
@@ -18,20 +22,20 @@ class ModelNode{
 
      //TODO: destructor in ModelNode for children
     public:
-        ModelNode(std::string mqttPathSegment, bool valueNode = false, std::string value = "");
+        ModelNode(const std::string &mqttPathSegment, bool valueNode = false, const std::string &value = "");
         std::string getMqttPath();
         ModelNode *getParent();
         void setParent(ModelNode *parent);
-        void registerChangeHandler(OnModelNodeChangeFunction onModelNodeChange, bool passToChildren = false);
-        void registerChangeHandler(ModelChangeHandlerVector onModelNodeChanges, bool passToChildren = false);
+        void registerChangeHandler(const OnModelNodeChangeFunction &onModelNodeChange, bool passToChildren = false);
+        void registerChangeHandler(const ModelChangeHandlerVector &onModelNodeChanges, bool passToChildren = false);
         void addChild(ModelNode *child);
-        ModelNode *findChildByMqttPathSegment(std::string mqttPathSegment);
-        std::string getValue();
-        void setValue(std::string value, bool triggerChange=true);
+        const std::string &getValue();
+        void setValue(const std::string &value, bool triggerChange=true);
         bool isValueNode();
 
     protected:
         void triggerChange(ModelNodeChangeType modelNodeChangeType);
+        std::shared_ptr<spdlog::logger> logger;
 
     private:
         std::string mqttPathSegment;

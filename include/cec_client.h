@@ -14,7 +14,7 @@ class CecClient
 {
     public:
         ~CecClient();
-        void init();
+        void connect();
 
         static CecClient *getInstance(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger);
 

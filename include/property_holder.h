@@ -4,11 +4,11 @@
 
 class PropertyHolder{
     public:
-        PropertyHolder(std::string name, bool mandatory = false);
-        virtual void setValue(std::string valueString) = 0;
+        PropertyHolder(const std::string &name, bool mandatory = false);
+        virtual void setValue(const std::string &valueString) = 0;
         bool isMandatory();
         bool isValueGiven();
-        std::string getName();
+        const std::string &getName();
     
     protected:
         bool valueGiven;

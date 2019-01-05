@@ -2,3 +2,4 @@
 build/*
 raspberry_build/*
 lib/*
+logs/

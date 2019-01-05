@@ -1,6 +1,6 @@
 #include "device_model.h"
 
-DeviceModel::DeviceModel(std::string mqttPathSegment) : ModelNode(mqttPathSegment)
+DeviceModel::DeviceModel(const std::string &mqttPathSegment) : ModelNode(mqttPathSegment)
 {
     this->name = new ModelNode("name", true);
     this->isActive = new ModelNode("isActive", true);

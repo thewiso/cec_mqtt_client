@@ -5,7 +5,7 @@
 class DeviceModel: public ModelNode{
 
     public:
-        DeviceModel(std::string mqttPathSegment);
+        DeviceModel(const std::string &mqttPathSegment);
         ModelNode *getName();
         ModelNode *getIsActive();
         ModelNode *getPowerStatus();

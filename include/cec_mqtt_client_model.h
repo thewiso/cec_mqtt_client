@@ -10,10 +10,10 @@
 class CecMqttClientModel: public ModelNode{
     
     public: 
-        CecMqttClientModel(std::string mqttRootPathSegment);
+        CecMqttClientModel(const std::string &mqttRootPathSegment);
         GeneralModel *getGeneralModel();
-        std::vector<DeviceModel*> getDeviceModels();
-        std::pair<DeviceModel*, bool> getOrCreateDeviceModel(std::string logicalAddress);
+        const std::vector<DeviceModel*> &getDeviceModels();
+        std::pair<DeviceModel*, bool> getOrCreateDeviceModel(const std::string &logicalAddress);
 
     private:
         std::vector<DeviceModel*> deviceModels;

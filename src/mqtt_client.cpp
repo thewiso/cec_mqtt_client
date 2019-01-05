@@ -11,6 +11,13 @@ MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientM
     this->model = model;
     this->client = new mqtt::client(this->properties.getMqttBrokerAdress(), this->properties.getMqttClientId());
     this->logger = logger;
+    firstConnect = true;
+
+    model->registerChangeHandler(std::bind( &MqttClient::modelNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
+     //TODO: QOS
+    connOpts.set_keep_alive_interval(20);
+    connOpts.set_clean_session(true);
+    
 }
 
 MqttClient::~MqttClient(){
@@ -20,34 +27,27 @@ MqttClient::~MqttClient(){
     delete client;
 }
 
-void MqttClient::init(){
-    model->registerChangeHandler(std::bind( &MqttClient::modelNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
-     //TODO: QOS
-    mqtt::connect_options connOpts;
-    connOpts.set_keep_alive_interval(20);
-    connOpts.set_clean_session(true);
-    client->connect(connOpts);
-    //TODO: handle connection fail
-
-
-}
-
 bool MqttClient::connect(){
     if(!client->is_connected()){
-        //TODO: in extra thread to prevent blocking of main thread
         int connectAttempt = 0;
         while(connectAttempt<MAX_CONNECT_ATTEMPTS && !client->is_connected()){
             if(connectAttempt > 0){
                 std::this_thread::sleep_for(std::chrono::milliseconds(this->CONNECT_TIME_OUT_MILLISECONDS));
             }
-
             connectAttempt++;
-            //TODO: log level
-            std::cout << "Reconnecting to MQTT server (attempt " << connectAttempt << " of " << MAX_CONNECT_ATTEMPTS << ")...\n";
-            client->reconnect();
-        }
+            logger.get()->info("Connecting to MQTT server (attempt {} of {})...", connectAttempt, MAX_CONNECT_ATTEMPTS);
+            
+            if(firstConnect){
+                client->connect(connOpts);
+                firstConnect = false;
+            }else{
+                client->reconnect();
 
-        return client->is_connected();
+            }
+        }
+        bool retVal =  client->is_connected();
+        logger.get()->info("Connecting to MQTT server {}", (retVal ? "succeded." : "failed"));
+        return retVal;
     }else{
         return true;
     }
@@ -71,7 +71,7 @@ void MqttClient::publish(std::string topic, std::string value){
                 << exc.get_reason_code() << "]" << std::endl;
         }
     }else{
-        std::cerr << "Could not connect to MQTT broker to publish " << topic << ":" << value;
+        logger.get()->error("Could not connect to MQTT broker to publish '{}' = '{}'", topic, value);
     } 
 
    

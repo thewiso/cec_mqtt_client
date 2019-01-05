@@ -5,8 +5,8 @@
 
 class StringPropertyHolder: public PropertyHolder{
     public:
-        StringPropertyHolder(std::string name, std::string *value, bool mandatory = false);
-        virtual void setValue(std::string valueString);
+        StringPropertyHolder(const std::string &name, std::string *value, bool mandatory = false);
+        virtual void setValue(const std::string &valueString);
     
     private:
         std::string *value;

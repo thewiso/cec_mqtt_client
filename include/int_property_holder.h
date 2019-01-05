@@ -4,8 +4,8 @@
 
 class IntPropertyHolder: public GenericPropertyHolder<int>{
      public:
-        IntPropertyHolder(std::string name, int *value, bool mandatory = false);
+        IntPropertyHolder(const std::string &name, int *value, bool mandatory = false);
         
     protected:
-        virtual int parseValue(std::string valueString);
+        virtual int parseValue(const std::string &valueString);
 };

@@ -32,6 +32,24 @@ CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientMod
     this->logger = logger;
     //TODO: add model listener
 
+    bcm_host_init();
+
+    callbacks->Clear();
+    callbacks->sourceActivated = &static_sourceActivatedHandler;
+    callbacks->commandReceived = &static_commandReceivedHandler;
+    callbacks->alert = &static_alertHandler;
+
+    config->Clear();    
+    config->clientVersion = CEC::LIBCEC_VERSION_CURRENT;
+    config->bActivateSource = 0;
+    config->callbacks = callbacks;
+    //TODO: logical device from configuration file
+    config->deviceTypes.Add(CEC::CEC_DEVICE_TYPE_PLAYBACK_DEVICE);
+
+    //TODO: devicename from configuration file
+    const std::string devicename("CECExample");
+    devicename.copy(config->strDeviceName, std::min(devicename.size(),13u) );
+
 }
 
 CecClient::~CecClient(){
@@ -82,24 +100,8 @@ void CecClient::static_alertHandler(void* UNUSED, const CEC::libcec_alert alert,
         
 
 
-void CecClient::init(){
-    bcm_host_init();
-
-    callbacks->Clear();
-    callbacks->sourceActivated = &static_sourceActivatedHandler;
-    callbacks->commandReceived = &static_commandReceivedHandler;
-    callbacks->alert = &static_alertHandler;
-
-    config->Clear();    
-    config->clientVersion = CEC::LIBCEC_VERSION_CURRENT;
-    config->bActivateSource = 0;
-    config->callbacks = callbacks;
-    //TODO: logical device from configuration file
-    config->deviceTypes.Add(CEC::CEC_DEVICE_TYPE_PLAYBACK_DEVICE);
-
-    //TODO: devicename from configuration file
-    const std::string devicename("CECExample");
-    devicename.copy(config->strDeviceName, std::min(devicename.size(),13u) );
+void CecClient::connect(){
+    logger.get()->info("Connecting to CEC Hub...");
     
     adapter = LibCecInitialise(config);
     if( !adapter )
@@ -119,11 +121,15 @@ void CecClient::init(){
     if(adapter->Open(devices[0].strComName)){
         //TODO: throw exception
     }
+
+    logger.get()->info("Connecting to CEC Hub succeded.");
     updateGeneralModel();
     updateDeviceModel();
 }
 
 void CecClient::updateGeneralModel(){
+    logger.get()->debug("Updating GeneralModel");
+
     adapterMutex.lock();
     CEC::cec_logical_address activeSource = adapter->GetActiveSource();
     adapterMutex.unlock();
@@ -134,6 +140,7 @@ void CecClient::updateGeneralModel(){
 }
 
 void CecClient::updateDeviceModel(){
+    logger.get()->debug("Updating DeviceModel");
     //TODO: log debug duration of method
     //TODO: when to use adapter->RescanActiveDevices ?
     adapterMutex.lock();
@@ -164,7 +171,7 @@ void CecClient::updateDeviceModel(){
                 //TODO: register change handler on new model
             }
         }else{
-            //set activity and power state of other already created, now inactive devices
+            //set activity and power state of other, already created and now inactive devices
             std::vector<DeviceModel*>::iterator iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [currentAddressString] (DeviceModel *deviceModel) { return deviceModel->getLogicalAddress()->getValue() == currentAddressString; } ); 
             if(iterator != deviceModels.end()){
                 (*iterator)->getIsActive()->setValue(Utilities::FALSE_STRING_LITERAL);

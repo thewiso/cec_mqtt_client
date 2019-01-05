@@ -9,9 +9,9 @@ class CecMqttClientProperties
     public:
         CecMqttClientProperties();
 
-        std::string getMqttClientId();
-        std::string getMqttBrokerAdress();
-        std::string getMqttTopicPrefix();
+        const std::string &getMqttClientId();
+        const std::string &getMqttBrokerAdress();
+        const std::string &getMqttTopicPrefix();
 
     protected:
         virtual void fillPropertyMap();

@@ -14,14 +14,14 @@ void CecMqttClientProperties::fillPropertyMap(){
     propertyHolders.push_back(new StringPropertyHolder("MQTT_BROKER_ADRESS", &mqttBrokerAdress, true));
 }
 
-std::string CecMqttClientProperties::getMqttClientId(){
+const std::string &CecMqttClientProperties::getMqttClientId(){
     return mqttClientId;
 }
 
-std::string CecMqttClientProperties::getMqttBrokerAdress(){
+const std::string &CecMqttClientProperties::getMqttBrokerAdress(){
     return mqttBrokerAdress;
 }
 
-std::string CecMqttClientProperties::getMqttTopicPrefix(){
+const std::string &CecMqttClientProperties::getMqttTopicPrefix(){
     return mqttTopicPrefix;
 }
