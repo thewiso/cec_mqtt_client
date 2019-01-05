@@ -18,7 +18,6 @@ std::vector<DeviceModel*> CecMqttClientModel::getDeviceModels(){
     return deviceModels;
 }
 
-#include <iostream>
 std::pair<DeviceModel*, bool> CecMqttClientModel::getOrCreateDeviceModel(std::string logicalAddress){
     std::vector<DeviceModel*>::iterator iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [logicalAddress] (DeviceModel *deviceModel) { return deviceModel->getLogicalAddress()->getValue() == logicalAddress; } ); 
 
