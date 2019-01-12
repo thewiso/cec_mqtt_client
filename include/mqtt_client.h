@@ -15,7 +15,7 @@ class MqttClient{
         MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger);
         ~MqttClient();
         void modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
-        bool connect();
+        void connect();
         
     private:
         static const int MAX_CONNECT_ATTEMPTS;

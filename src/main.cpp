@@ -52,6 +52,8 @@ int main(int argc, char* argv[])
     signal(SIGINT, handle_signal);
 
     try{
+        generalLogger.get()->info("Initializing client...");
+
         generalLogger.get()->info("Reading property file...");
         CecMqttClientProperties properties;
         properties.readFile("cec_mqtt_client.conf");
@@ -65,6 +67,7 @@ int main(int argc, char* argv[])
         mqttClient->connect();
         cecClient->connect();
 
+        generalLogger.get()->info("Successfully initialized client.");
         while(!interrupt.load()){
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
@@ -75,14 +78,14 @@ int main(int argc, char* argv[])
 
         //TODO: TEST
         //toggle activeDevice
-        //network disconnect mqtt
+        //mqtt disconnent -> re-subscribe
         //hdmi disconnect cec
         generalLogger.get()->info("Exiting program after user interrupt.");
         return 0;
     }catch(const PropertyException &propertyException){
         generalLogger.get()->error("Exception occured while reading property file: {}", propertyException.what());
     }catch(const std::exception &exception){
-        generalLogger.get()->error("Unexpected exception occured: {}", exception.what());
+        generalLogger.get()->error("Exception occured: {}", exception.what());
     }
     generalLogger.get()->info("Exiting program after exception.");
     return -1;

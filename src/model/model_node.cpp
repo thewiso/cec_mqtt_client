@@ -55,12 +55,14 @@ void ModelNode::registerChangeHandler(const ModelChangeHandlerVector &onModelNod
     }
 }
 
-void ModelNode::addChild(ModelNode *child){
+void ModelNode::addChild(ModelNode *child, bool triggerInsertChange){
     child->parent = this;
     children.push_back(child);
 
     child->registerChangeHandler(modelChangeHandlersForChildren, true);
-    child->triggerChange(ModelNodeChangeType::INSERT);
+    if(triggerInsertChange){
+        child->triggerChange(ModelNodeChangeType::INSERT);
+    }
 }
 
 void ModelNode::triggerChange(ModelNodeChangeType modelNodeChangeType){

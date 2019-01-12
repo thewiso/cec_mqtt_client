@@ -7,6 +7,12 @@ class GeneralModel: public ModelNode{
         GeneralModel();
         ModelNode *getActiveSourceLogicalAddress();
 
+        ModelNode *getActiveSourceLogicalAddressCommand();
+        ModelNode *getOSDNameCommand();
+
     private:
         ModelNode *activeSourceLogicalAddress;
+        ModelNode *commands;
+        ModelNode *OSDNameCommand;
+        ModelNode *activeSourceLogicalAddressCommand;
 };

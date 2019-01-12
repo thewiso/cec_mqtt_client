@@ -7,18 +7,21 @@ project(cec_mqtt_client VERSION 0.1.0)
 set(SRCDIR ${PROJECT_SOURCE_DIR}/src)
 set(SRCFILES 
     ${SRCDIR}/main.cpp 
-    ${SRCDIR}/properties.cpp
-    ${SRCDIR}/cec_mqtt_client_properties.cpp
+    ${SRCDIR}/utilities.cpp
     ${SRCDIR}/mqtt_client.cpp
     ${SRCDIR}/cec_client.cpp
-    ${SRCDIR}/property_holder.cpp
-    ${SRCDIR}/string_property_holder.cpp
-    ${SRCDIR}/int_property_holder.cpp
-    ${SRCDIR}/cec_mqtt_client_model.cpp
-    ${SRCDIR}/model_node.cpp
-    ${SRCDIR}/general_model.cpp
-    ${SRCDIR}/device_model.cpp
-    ${SRCDIR}/utilities.cpp
+
+    ${SRCDIR}/properties/properties.cpp
+    ${SRCDIR}/properties/cec_mqtt_client_properties.cpp
+    ${SRCDIR}/properties/property_holder.cpp
+    ${SRCDIR}/properties/string_property_holder.cpp
+    ${SRCDIR}/properties/int_property_holder.cpp
+    
+    ${SRCDIR}/model/cec_mqtt_client_model.cpp
+    ${SRCDIR}/model/model_node.cpp
+    ${SRCDIR}/model/general_model.cpp
+    ${SRCDIR}/model/device_model.cpp
+    
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
@@ -30,7 +33,7 @@ add_executable(cec_mqtt_client ${SRCFILES})
 if(NOT DEFINED INCLUDE_BCM_HOST_DIR)
     set(INCLUDE_BCM_HOST_DIR /opt/vc/include/)
 endif(NOT DEFINED INCLUDE_BCM_HOST_DIR)
-
+#TODO: change the path so that simly cloning SPDLOG in log folder is enough
 if(NOT DEFINED INCLUDE_SPDLOG_DIR)
     set(INCLUDE_SPDLOG_DIR lib)
 endif(NOT DEFINED INCLUDE_SPDLOG_DIR)
@@ -38,6 +41,8 @@ endif(NOT DEFINED INCLUDE_SPDLOG_DIR)
 #include directories
 target_include_directories(cec_mqtt_client 
     PUBLIC include
+    PUBLIC include/properties
+    PUBLIC include/model
     PUBLIC ${INCLUDE_BCM_HOST_DIR}      #BCM_HOST
     PUBLIC ${INCLUDE_SPDLOG_DIR}        #SPDLOG
 )

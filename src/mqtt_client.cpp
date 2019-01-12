@@ -1,5 +1,6 @@
 #include "mqtt_client.h"
 
+#include <stdexcept>
 #include <thread>
 #include <chrono>
 
@@ -17,7 +18,7 @@ MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientM
      //TODO: QOS
     connOpts.set_keep_alive_interval(20);
     connOpts.set_clean_session(true);
-    
+    connOpts.set_automatic_reconnect(true);
 }
 
 MqttClient::~MqttClient(){
@@ -27,7 +28,7 @@ MqttClient::~MqttClient(){
     delete client;
 }
 
-bool MqttClient::connect(){
+void MqttClient::connect(){
     if(!client->is_connected()){
         int connectAttempt = 0;
         while(connectAttempt<MAX_CONNECT_ATTEMPTS && !client->is_connected()){
@@ -37,42 +38,38 @@ bool MqttClient::connect(){
             connectAttempt++;
             logger.get()->info("Connecting to MQTT server (attempt {} of {})...", connectAttempt, MAX_CONNECT_ATTEMPTS);
             
-            if(firstConnect){
-                client->connect(connOpts);
-                firstConnect = false;
-            }else{
-                client->reconnect();
-
+            try{
+                if(firstConnect){
+                    client->connect(connOpts);
+                    firstConnect = false;
+                }else{
+                    client->reconnect();
+                }
+            }catch(const mqtt::exception& ex){
+                logger.get()->warn("Exception during connecting: {}", ex.what());
             }
         }
-        bool retVal =  client->is_connected();
-        logger.get()->info("Connecting to MQTT server {}", (retVal ? "succeded." : "failed"));
-        return retVal;
-    }else{
-        return true;
-    }
 
+        if(client->is_connected()){
+            logger.get()->info("Connecting to MQTT server succeded.");
+        }else{
+            throw std::runtime_error("Connecting to MQTT server failed after " + std::to_string(connectAttempt) + " attempts");
+        }
+    }
 }
 
 void MqttClient::modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType){
-    if(modelNode.isValueNode() && modelNodeChangeType == ModelNodeChangeType::UPDATE){
+    if(modelNode.isValueNode()){
         publish(modelNode.getMqttPath(), modelNode.getValue());
     }
 }
 
 void MqttClient::publish(std::string topic, std::string value){
-    if(connect()){
-        try {
-            client->publish(topic, value.c_str(), strlen(value.c_str()), 0, false);
-        }
-        //TODO: better error handling
-        catch (const mqtt::exception& exc) {
-            std::cerr << "Error: " << exc.what() << " ["
-                << exc.get_reason_code() << "]" << std::endl;
-        }
-    }else{
-        logger.get()->error("Could not connect to MQTT broker to publish '{}' = '{}'", topic, value);
-    } 
+    try{
+        client->publish(topic, value.c_str(), strlen(value.c_str()), 0, false);
+    }catch (const mqtt::exception &ex) {
+        logger.get()->error("Could not connect publish '{}' = '{}'. Reason: {}", topic, value, ex.get_message());
+    }
 
    
 }

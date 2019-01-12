@@ -28,7 +28,7 @@ class ModelNode{
         void setParent(ModelNode *parent);
         void registerChangeHandler(const OnModelNodeChangeFunction &onModelNodeChange, bool passToChildren = false);
         void registerChangeHandler(const ModelChangeHandlerVector &onModelNodeChanges, bool passToChildren = false);
-        void addChild(ModelNode *child);
+        void addChild(ModelNode *child, bool triggerInsertChange = false);
         const std::string &getValue();
         void setValue(const std::string &value, bool triggerChange=true);
         bool isValueNode();
