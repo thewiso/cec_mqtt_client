@@ -9,6 +9,7 @@ set(SRCFILES
     ${SRCDIR}/main.cpp 
     ${SRCDIR}/utilities.cpp
     ${SRCDIR}/mqtt_client.cpp
+    ${SRCDIR}/mqtt_client_callback.cpp
     ${SRCDIR}/cec_client.cpp
 
     ${SRCDIR}/properties/properties.cpp

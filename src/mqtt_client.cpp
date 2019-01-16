@@ -1,5 +1,8 @@
 #include "mqtt_client.h"
 
+#include "utilities.h"
+#include "spdlog/spdlog.h"
+
 #include <stdexcept>
 #include <thread>
 #include <chrono>
@@ -7,23 +10,29 @@
 const int MqttClient::CONNECT_TIME_OUT_MILLISECONDS = 3000;
 const int MqttClient::MAX_CONNECT_ATTEMPTS = 3;
 
-MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger){
+MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model){
     this->properties = properties;
-    this->model = model;
-    this->client = new mqtt::client(this->properties.getMqttBrokerAdress(), this->properties.getMqttClientId());
-    this->logger = logger;
-    firstConnect = true;
+    this->logger = spdlog::get(Utilities::MQTT_LOGGER_NAME);
+    this->firstConnect = true;
+    
+    this->client = new mqtt::async_client(this->properties.getMqttBrokerAdress(), this->properties.getMqttClientId());
 
+    this->mqttClientCallback = new MqttClientCallback(*client);
+    mqttClientCallback->addNodeForSubscription(model->getGeneralModel()->getClientOSDNameCommand());
+    mqttClientCallback->addNodeForSubscription(model->getGeneralModel()->getActiveSourceLogicalAddressCommand());
+    this->client->set_callback(*mqttClientCallback);
+
+    this->model = model;
     model->registerChangeHandler(std::bind( &MqttClient::modelNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
      //TODO: QOS
-    connOpts.set_keep_alive_interval(20);
-    connOpts.set_clean_session(true);
-    connOpts.set_automatic_reconnect(true);
+    connectionOptions.set_keep_alive_interval(20);
+    connectionOptions.set_clean_session(true);
+    connectionOptions.set_automatic_reconnect(true);
 }
 
 MqttClient::~MqttClient(){
     if(client->is_connected()){
-        client->disconnect();
+        client->disconnect()->wait();
     }
     delete client;
 }
@@ -40,7 +49,7 @@ void MqttClient::connect(){
             
             try{
                 if(firstConnect){
-                    client->connect(connOpts);
+                    client->connect(connectionOptions);
                     firstConnect = false;
                 }else{
                     client->reconnect();
@@ -50,9 +59,7 @@ void MqttClient::connect(){
             }
         }
 
-        if(client->is_connected()){
-            logger.get()->info("Connecting to MQTT server succeded.");
-        }else{
+        if(!client->is_connected()){
             throw std::runtime_error("Connecting to MQTT server failed after " + std::to_string(connectAttempt) + " attempts");
         }
     }

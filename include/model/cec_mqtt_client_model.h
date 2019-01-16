@@ -19,6 +19,4 @@ class CecMqttClientModel: public ModelNode{
         std::vector<DeviceModel*> deviceModels;
         ModelNode *deviceParentNode;
         GeneralModel *generalModel;
-    
-
 };

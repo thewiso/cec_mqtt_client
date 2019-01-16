@@ -5,6 +5,8 @@ const std::string Utilities::FALSE_STRING_LITERAL = "false";
 const std::string Utilities::INVALID_STRING_LITERAL = "-1";
 
 const std::string Utilities::GENERAL_LOGGER_NAME = "GENERAL";
+const std::string Utilities::CEC_LOGGER_NAME = "CEC";
+const std::string Utilities::MQTT_LOGGER_NAME = "MQTT";
 
 const std::map<CEC::cec_logical_address, std::string> Utilities::CEC_LOGICAL_ADRESS_2_STRING_LITERAL = {
     {CEC::cec_logical_address::CECDEVICE_UNKNOWN         , "UNKNOWN"},

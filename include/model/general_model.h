@@ -8,11 +8,11 @@ class GeneralModel: public ModelNode{
         ModelNode *getActiveSourceLogicalAddress();
 
         ModelNode *getActiveSourceLogicalAddressCommand();
-        ModelNode *getOSDNameCommand();
+        ModelNode *getClientOSDNameCommand();
 
     private:
         ModelNode *activeSourceLogicalAddress;
         ModelNode *commands;
-        ModelNode *OSDNameCommand;
+        ModelNode *clientOSDNameCommand;
         ModelNode *activeSourceLogicalAddressCommand;
 };

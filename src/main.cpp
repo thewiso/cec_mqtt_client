@@ -33,12 +33,15 @@ int main(int argc, char* argv[])
     //1024 * 1024 * 5 = 5 Mebibyte, 2 log filesspdlog::level::debug
     auto sharedFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("cec_mqtt_client_log.txt", 1024 * 1024 * 5, 2);
     auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    spdlog::sinks_init_list loggerSinks = {sharedFileSink, consoleSink};
     //TODO: property file: boolean logToConsole
 
     
-    auto cecLogger = std::make_shared<spdlog::logger>("CEC", spdlog::sinks_init_list{sharedFileSink, consoleSink});
-    auto mqttLogger = std::make_shared<spdlog::logger>("MQTT", spdlog::sinks_init_list{sharedFileSink, consoleSink});
-    auto generalLogger = std::make_shared<spdlog::logger>(Utilities::GENERAL_LOGGER_NAME, spdlog::sinks_init_list{sharedFileSink, consoleSink});
+    auto cecLogger = std::make_shared<spdlog::logger>(Utilities::CEC_LOGGER_NAME, loggerSinks);
+    auto mqttLogger = std::make_shared<spdlog::logger>(Utilities::MQTT_LOGGER_NAME, loggerSinks);
+    auto generalLogger = std::make_shared<spdlog::logger>(Utilities::GENERAL_LOGGER_NAME, loggerSinks);
+    spdlog::register_logger(cecLogger);
+    spdlog::register_logger(mqttLogger);
     spdlog::register_logger(generalLogger);
 
     spdlog::level::level_enum logLevel = spdlog::level::level_enum::trace;
@@ -48,6 +51,7 @@ int main(int argc, char* argv[])
 
     //TODO: implement usage of auto (e.g. in for loop iterator)
     //TODO: smart pointer??
+    //TODO: ptr.get() durch *ptr ersetzen!
     //TODO: general update command
     signal(SIGINT, handle_signal);
 
@@ -61,11 +65,13 @@ int main(int argc, char* argv[])
 
         CecMqttClientModel *model = new CecMqttClientModel(properties.getMqttTopicPrefix());
         
-        MqttClient *mqttClient = new MqttClient(properties, model, mqttLogger);
-        CecClient *cecClient = CecClient::getInstance(properties, model, cecLogger);
+        MqttClient *mqttClient = new MqttClient(properties, model);
+        CecClient *cecClient = CecClient::getInstance(properties, model);
 
         mqttClient->connect();
         cecClient->connect();
+
+        model->retriggerInsertChangeRecursive();
 
         generalLogger.get()->info("Successfully initialized client.");
         while(!interrupt.load()){
@@ -78,7 +84,6 @@ int main(int argc, char* argv[])
 
         //TODO: TEST
         //toggle activeDevice
-        //mqtt disconnent -> re-subscribe
         //hdmi disconnect cec
         generalLogger.get()->info("Exiting program after user interrupt.");
         return 0;

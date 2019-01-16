@@ -38,3 +38,4 @@ std::pair<DeviceModel*, bool> CecMqttClientModel::getOrCreateDeviceModel(const s
 
     return retVal;
 }
+

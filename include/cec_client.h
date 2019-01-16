@@ -16,10 +16,10 @@ class CecClient
         ~CecClient();
         void connect();
 
-        static CecClient *getInstance(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger);
+        static CecClient *getInstance(const CecMqttClientProperties &properties, CecMqttClientModel *model);
 
     private:
-        CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger);
+        CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model);
         void updateGeneralModel();
         void updateDeviceModel();
         

@@ -5,11 +5,12 @@
 
 #include <stdexcept>
 
-ModelNode::ModelNode(const std::string &mqttPathSegment, bool valueNode, const std::string &value){
+ModelNode::ModelNode(const std::string &mqttPathSegment, bool valueNode, const std::string &value, bool triggerInsertChange){
     this->parent = nullptr;
     this->mqttPathSegment = mqttPathSegment;
     this->valueNode = valueNode;
     this->logger = spdlog::get(Utilities::GENERAL_LOGGER_NAME);
+    this->triggerInsertChange = triggerInsertChange;
     
     if(valueNode){
         this->value = value;
@@ -55,19 +56,19 @@ void ModelNode::registerChangeHandler(const ModelChangeHandlerVector &onModelNod
     }
 }
 
-void ModelNode::addChild(ModelNode *child, bool triggerInsertChange){
+void ModelNode::addChild(ModelNode *child){
     child->parent = this;
     children.push_back(child);
 
     child->registerChangeHandler(modelChangeHandlersForChildren, true);
-    if(triggerInsertChange){
-        child->triggerChange(ModelNodeChangeType::INSERT);
-    }
+    child->triggerChange(ModelNodeChangeType::INSERT);
 }
 
 void ModelNode::triggerChange(ModelNodeChangeType modelNodeChangeType){
-    for(ModelChangeHandlerVector::iterator it = modelChangeHandlers.begin(); it != modelChangeHandlers.end(); ++it){
-        (*it)(*this, modelNodeChangeType);
+    if(modelNodeChangeType != ModelNodeChangeType::INSERT || triggerInsertChange){
+        for(ModelChangeHandlerVector::iterator it = modelChangeHandlers.begin(); it != modelChangeHandlers.end(); ++it){
+            (*it)(*this, modelNodeChangeType);
+        }
     }
 }
 
@@ -95,5 +96,16 @@ void ModelNode::setValue(const std::string &value, bool triggerChange){
         this->triggerChange(ModelNodeChangeType::UPDATE);
     }
     valueSetMutex.unlock();
+}
+
+const std::vector<ModelNode*> &ModelNode::getChildren(){
+    return children;
+}
+
+void ModelNode::retriggerInsertChangeRecursive(){
+    triggerChange(ModelNodeChangeType::INSERT);
+    for(auto it = children.begin(); it != children.end(); ++it){
+        (*it)->retriggerInsertChangeRecursive();
+    }
 }
 

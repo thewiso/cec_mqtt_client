@@ -1,5 +1,6 @@
 #include "cec_client.h"
 #include "utilities.h"
+#include "spdlog/spdlog.h"
 
 #include <algorithm> 
 #include <utility>
@@ -23,13 +24,13 @@ const CEC::cec_opcode CecClient::RELEVANT_OPCODES[] = {
     CEC::cec_opcode::CEC_OPCODE_STANDBY             //is sent if TV is switched OFF
 };
 
-CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger){
+CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model){
     this->properties = properties;
     this->model = model;
     this->adapter = nullptr;
     this->callbacks = new CEC::ICECCallbacks();
     this->config = new CEC::libcec_configuration();
-    this->logger = logger;
+    this->logger = spdlog::get(Utilities::CEC_LOGGER_NAME);
     //TODO: add model listener
 
     bcm_host_init();
@@ -65,10 +66,10 @@ CecClient *CecClient::getInstance(){
     return singleton;
 }
 
-CecClient *CecClient::getInstance(const CecMqttClientProperties &properties, CecMqttClientModel *model, const std::shared_ptr<spdlog::logger> &logger){
+CecClient *CecClient::getInstance(const CecMqttClientProperties &properties, CecMqttClientModel *model){
     //no need for thread safety, this should be called at program start in the good old main method
     if(singleton == nullptr){
-        singleton = new CecClient(properties, model, logger);
+        singleton = new CecClient(properties, model);
     }
     return singleton;
 }
