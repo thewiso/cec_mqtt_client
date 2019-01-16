@@ -31,12 +31,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 add_executable(cec_mqtt_client ${SRCFILES})
 
 #Custom paths for libraries
+set(INCLUDE_BCM_HOST_DIR_DEFAULT /opt/vc/include/)
+set(INCLUDE_SPDLOG_DIR_DEFAULT lib/spdlog/include/)
+
 if(NOT DEFINED INCLUDE_BCM_HOST_DIR)
-    set(INCLUDE_BCM_HOST_DIR /opt/vc/include/)
+    set(INCLUDE_BCM_HOST_DIR ${INCLUDE_BCM_HOST_DIR_DEFAULT})
 endif(NOT DEFINED INCLUDE_BCM_HOST_DIR)
-#TODO: change the path so that simly cloning SPDLOG in log folder is enough
 if(NOT DEFINED INCLUDE_SPDLOG_DIR)
-    set(INCLUDE_SPDLOG_DIR lib)
+    set(INCLUDE_SPDLOG_DIR ${INCLUDE_SPDLOG_DIR_DEFAULT})
 endif(NOT DEFINED INCLUDE_SPDLOG_DIR)
 
 #include directories
@@ -71,9 +73,8 @@ target_link_libraries(cec_mqtt_client
     ${LIB_PAHO_MQTT_CPP} 
     ${LIB_LIB_CEC} 
     ${LIB_BCM_HOST}
-    dl
+    dl #a.k.a libdl
 )
-#TODO: can dl be found everywhere?
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
