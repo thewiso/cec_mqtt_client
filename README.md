@@ -9,8 +9,11 @@ It is developed, tested and maintained on **Raspberry Pi**
 
 I am using 
 [libCEC](https://github.com/Pulse-Eight/libcec) 
+
 [spdlog](https://github.com/gabime/spdlog)
+
 [Eclipse Paho MQTT C++](https://github.com/eclipse/paho.mqtt.cpp)
+
 
 
 ## IT IS NOT IN A USABLE STATE YET
