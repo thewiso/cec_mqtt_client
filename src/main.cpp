@@ -70,6 +70,9 @@ int main(int argc, char* argv[])
         mqttClient->connect();
         cecClient->connect();
 
+        //TODO: set a trigger state to model, so changes before the init of all components are saved and then fired
+        //update: only the last event is fired
+        //TODO: clear command nodes at start
         model->retriggerInsertChangeRecursive();
 
         generalLogger.get()->info("Successfully initialized client.");

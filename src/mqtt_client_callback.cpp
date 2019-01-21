@@ -3,13 +3,14 @@
 #include "utilities.h"
 
 #include <exception>
+#include <algorithm>
 
 MqttClientCallback::MqttClientCallback(mqtt::async_client &client): client(client){
     this->logger = spdlog::get(Utilities::MQTT_LOGGER_NAME);
 }
 
 void MqttClientCallback::connected(const std::string &cause){
-    logger.get()->info("Connecting to MQTT server succeded.");
+    logger.get()->info("Connecting to MQTT server succedeed.");
 
     for(auto it = subscriptionNodes.begin(); it != subscriptionNodes.end(); ++it){
         //TODO QOS = 1?
@@ -29,7 +30,17 @@ void MqttClientCallback::connection_lost(const std::string &cause){
 }
 
 void MqttClientCallback::message_arrived(mqtt::const_message_ptr message){
-    logger.get()->trace("Message of subscribed topic '{}' arrived: '{}'", message->get_topic(), message->get_payload_str());
+    std::string topic = message->get_topic();
+    logger.get()->trace("Message of subscribed topic '{}' arrived: '{}'", topic, message->get_payload_str());
+    auto iterator = std::find_if(subscriptionNodes.begin(), subscriptionNodes.end(), [topic] (ModelNode *modelNode){
+        return modelNode->getMqttPath() == topic;
+    });
+
+    if(iterator != subscriptionNodes.end()){
+        (*iterator)->setValue(message->get_payload_str());
+    }else{
+        (*logger).error("Could not find model node for subscribed topic {}", topic);
+    }
 }
 
 void MqttClientCallback::delivery_complete(mqtt::delivery_token_ptr token){

@@ -31,6 +31,10 @@ CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientMod
     this->callbacks = new CEC::ICECCallbacks();
     this->config = new CEC::libcec_configuration();
     this->logger = spdlog::get(Utilities::CEC_LOGGER_NAME);
+
+    model->getGeneralModel()->getClientOSDNameCommand()->registerChangeHandler(std::bind( &CecClient::clientOSDNameCommandNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
+    model->getGeneralModel()->getActiveSourceLogicalAddress()->registerChangeHandler(std::bind( &CecClient::activeSourceLogicalAddressCommandNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
+
     //TODO: add model listener
 
     bcm_host_init();
@@ -44,7 +48,6 @@ CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientMod
     config->clientVersion = CEC::LIBCEC_VERSION_CURRENT;
     config->bActivateSource = 0;
     config->callbacks = callbacks;
-    //TODO: logical device from configuration file
     config->deviceTypes.Add(CEC::CEC_DEVICE_TYPE_PLAYBACK_DEVICE);
 
     //TODO: devicename from configuration file
@@ -54,7 +57,6 @@ CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientMod
 }
 
 CecClient::~CecClient(){
-    cout << "foo";
     if(adapter != nullptr){
         adapter->Close();
         UnloadLibCec(adapter);
@@ -123,7 +125,7 @@ void CecClient::connect(){
         //TODO: throw exception
     }
 
-    logger.get()->info("Connecting to CEC Hub succeded.");
+    logger.get()->info("Connecting to CEC Hub succedeed.");
     updateGeneralModel();
     updateDeviceModel();
 }
@@ -181,4 +183,26 @@ void CecClient::updateDeviceModel(){
 
         }
     } 
+}
+
+void CecClient::clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType){
+    std::string deviceName = modelNode.getValue();
+    if(!deviceName.empty()){
+        (*logger).debug("Changing client OSD name to {}...", deviceName);
+        deviceName.copy(config->strDeviceName, std::min(deviceName.size(),13u));
+        
+        adapterMutex.lock();
+        bool success = adapter->SetConfiguration(config);
+        adapterMutex.unlock();
+
+        if(success){
+            (*logger).debug("Changing client OSD name to {} succedeed.", deviceName);
+        }else{
+            //TODO: log error with all attributes of config
+        }
+    }
+}
+
+void CecClient::activeSourceLogicalAddressCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType){
+    (*logger).debug("Changing active device to {}", modelNode.getValue());
 }

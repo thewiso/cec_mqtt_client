@@ -15,7 +15,6 @@ class MqttClient{
     public:
         MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model);
         ~MqttClient();
-        void modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
         void connect();
         
     private:
@@ -31,5 +30,5 @@ class MqttClient{
         MqttClientCallback *mqttClientCallback;
 
         void publish(std::string topic, std::string value);
-
+        void modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
 };

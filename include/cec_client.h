@@ -22,6 +22,8 @@ class CecClient
         CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model);
         void updateGeneralModel();
         void updateDeviceModel();
+        void clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
+        void activeSourceLogicalAddressCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
         
         CecMqttClientProperties properties;
         CecMqttClientModel *model;
