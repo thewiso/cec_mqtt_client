@@ -29,7 +29,6 @@ void Properties::parseFile(std::ifstream &fileStream){
         if (std::getline(is_line, key, '='))
         {
             PropertyHolderList::iterator iterator = std::find_if(propertyHolders.begin(), propertyHolders.end(), [key] (PropertyHolder *propertyHolder) { return propertyHolder->getName() == key; } ); 
-            // propertyHolders.find(key);
             //if map contains key && line is no comment
             if (iterator != propertyHolders.end() && key[0] != '#'){
                 std::string value;

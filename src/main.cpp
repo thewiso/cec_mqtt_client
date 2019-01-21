@@ -18,7 +18,7 @@
 #include "property_exception.h"
 #include "utilities.h"
 
-//TODO: use lambda in signal function?
+
 std::atomic<bool> interrupt(false); 
 void handle_signal(int signal)
 {
@@ -28,14 +28,11 @@ void handle_signal(int signal)
 
 int main(int argc, char* argv[])
 {
-    //TODO: pattern?
-    //TODO: log file path, size, level as propertyfiles
+    //TODO: log file path, size as constant
     //1024 * 1024 * 5 = 5 Mebibyte, 2 log filesspdlog::level::debug
     auto sharedFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("cec_mqtt_client_log.txt", 1024 * 1024 * 5, 2);
     auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     spdlog::sinks_init_list loggerSinks = {sharedFileSink, consoleSink};
-    //TODO: property file: boolean logToConsole
-
     
     auto cecLogger = std::make_shared<spdlog::logger>(Utilities::CEC_LOGGER_NAME, loggerSinks);
     auto mqttLogger = std::make_shared<spdlog::logger>(Utilities::MQTT_LOGGER_NAME, loggerSinks);
@@ -44,11 +41,6 @@ int main(int argc, char* argv[])
     spdlog::register_logger(mqttLogger);
     spdlog::register_logger(generalLogger);
 
-    spdlog::level::level_enum logLevel = spdlog::level::level_enum::trace;
-    generalLogger.get()->set_level(logLevel);
-    mqttLogger.get()->set_level(logLevel);
-    cecLogger.get()->set_level(logLevel);
-
     //TODO: implement usage of auto (e.g. in for loop iterator)
     //TODO: smart pointer??
     //TODO: ptr.get() durch *ptr ersetzen!
@@ -56,12 +48,19 @@ int main(int argc, char* argv[])
     signal(SIGINT, handle_signal);
 
     try{
-        generalLogger.get()->info("Initializing client...");
-
-        generalLogger.get()->info("Reading property file...");
         CecMqttClientProperties properties;
         properties.readFile("cec_mqtt_client.conf");
+
+        if(!properties.getLoggerLogToConsole()){
+            (*consoleSink).set_level(spdlog::level::level_enum::off);
+        }
+        SpdLogLevel logLevel = properties.getLoggerLevel();
+        generalLogger.get()->set_level(logLevel);
+        mqttLogger.get()->set_level(logLevel);
+        cecLogger.get()->set_level(logLevel);
+
         generalLogger.get()->info("Finished reading property file.");
+        generalLogger.get()->info("Initializing client...");
 
         CecMqttClientModel *model = new CecMqttClientModel(properties.getMqttTopicPrefix());
         

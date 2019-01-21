@@ -1,17 +1,20 @@
 #include "cec_mqtt_client_properties.h"
-#include "string_property_holder.h"
-#include "int_property_holder.h"
 
 CecMqttClientProperties::CecMqttClientProperties() : Properties(){
     //declare defaults
     mqttClientId = "TV_CEC_CLIENT";
-    mqttTopicPrefix = "livingRoom/devices/TV";    
+    mqttTopicPrefix = "livingRoom/devices/TV";  
+    loggerLogToConsole = false;  
+    loggerLevel = SpdLogLevel::info;
 }
 
 void CecMqttClientProperties::fillPropertyMap(){
     propertyHolders.push_back(new StringPropertyHolder("MQTT_CLIENT_ID", &mqttClientId));
     propertyHolders.push_back(new StringPropertyHolder("MQTT_TOPIC_PREFIX", &mqttTopicPrefix));
     propertyHolders.push_back(new StringPropertyHolder("MQTT_BROKER_ADRESS", &mqttBrokerAdress, true));
+
+    propertyHolders.push_back(new BoolPropertyHolder("LOGGER_LOG_TO_CONSOLE", &loggerLogToConsole));
+    propertyHolders.push_back(new LogLevelPropertyHolder("LOGGER_LEVEL", &loggerLevel));
 }
 
 const std::string &CecMqttClientProperties::getMqttClientId(){
@@ -24,4 +27,12 @@ const std::string &CecMqttClientProperties::getMqttBrokerAdress(){
 
 const std::string &CecMqttClientProperties::getMqttTopicPrefix(){
     return mqttTopicPrefix;
+}
+
+bool CecMqttClientProperties::getLoggerLogToConsole(){
+    return loggerLogToConsole;
+}
+
+SpdLogLevel CecMqttClientProperties::getLoggerLevel(){
+    return loggerLevel;
 }

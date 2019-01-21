@@ -17,6 +17,8 @@ set(SRCFILES
     ${SRCDIR}/properties/property_holder.cpp
     ${SRCDIR}/properties/string_property_holder.cpp
     ${SRCDIR}/properties/int_property_holder.cpp
+    ${SRCDIR}/properties/bool_property_holder.cpp
+    ${SRCDIR}/properties/log_level_property_holder.cpp
     
     ${SRCDIR}/model/cec_mqtt_client_model.cpp
     ${SRCDIR}/model/model_node.cpp

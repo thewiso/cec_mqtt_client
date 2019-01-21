@@ -3,7 +3,7 @@
 #include "generic_property_holder.h"
 
 class IntPropertyHolder: public GenericPropertyHolder<int>{
-     public:
+    public:
         IntPropertyHolder(const std::string &name, int *value, bool mandatory = false);
         
     protected:
