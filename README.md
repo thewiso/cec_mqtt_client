@@ -63,3 +63,5 @@ TODO:
 - [ ] code doc
 - [ ] user doc
 - [ ] git release tag
+
+ https://github.com/Pulse-Eight/libcec/issues/202#issuecomment-315016802
