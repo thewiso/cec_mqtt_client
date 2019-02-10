@@ -22,9 +22,10 @@ class CecClient
         CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model);
         void updateGeneralModel();
         void updateDeviceModel();
-        void clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
-        void activeSourceLogicalAddressCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
-        
+        void clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType);
+        void devicePowerStateCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType);
+        void copyOSDDeviceNameToConfig(std::string &deviceName);
+
         CecMqttClientProperties properties;
         CecMqttClientModel *model;
         CEC::ICECAdapter *adapter;
@@ -36,10 +37,13 @@ class CecClient
         static void static_sourceActivatedHandler(void* UNUSED, const CEC::cec_logical_address logicalAddress, const uint8_t bActivated);
         static void static_commandReceivedHandler(void* UNUSED, const CEC::cec_command* command);
         static void static_alertHandler(void* UNUSED, const CEC::libcec_alert alert, const CEC::libcec_parameter param);
-        
+
         static CecClient *getInstance();
         static CecClient *singleton;
 
+        static const std::map<CEC::cec_logical_address, std::string> CEC_LOGICAL_ADRESS_2_STRING_LITERAL;
+        static const std::map<CEC::cec_power_status, std::string> CEC_POWER_STATUS_2_STRING_LITERAL;
         static const CEC::cec_opcode RELEVANT_OPCODES[];
+        static const int MAX_OSD_NAME_LENGTH;
 
 };

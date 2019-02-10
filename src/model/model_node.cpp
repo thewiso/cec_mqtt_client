@@ -4,18 +4,25 @@
 #include "spdlog/spdlog.h"
 
 #include <stdexcept>
-
-ModelNode::ModelNode(const std::string &mqttPathSegment, bool valueNode, const std::string &value, bool triggerInsertChange){
+ModelNode::ModelNode(const std::string &mqttPathSegment, bool valueNode, const std::string &value, bool triggerInsertChangeEvent, bool subscriptionNode){
     this->parent = nullptr;
     this->mqttPathSegment = mqttPathSegment;
     this->valueNode = valueNode;
     this->logger = spdlog::get(Utilities::GENERAL_LOGGER_NAME);
-    this->triggerInsertChange = triggerInsertChange;
-    
+    this->insertChangeEventStored = triggerInsertChangeEvent;
+    this->updateChangeEventStored = false;
+    this->changeEventsPaused = true;
+    this->subscriptionNode = subscriptionNode;
+
     if(valueNode){
         this->value = value;
     }
 }
+
+ModelNode::~ModelNode(){
+    
+}
+
 std::string ModelNode::getMqttPath(){
     std::string retVal = "/" + mqttPathSegment;
 
@@ -26,10 +33,12 @@ std::string ModelNode::getMqttPath(){
     return retVal;
 }
 
+//TODO: reference return value
 ModelNode* ModelNode::getParent(){
     return parent;
 }
 
+//TODO: reference param
 void ModelNode::setParent(ModelNode *parent){
     this->parent = parent;
 }
@@ -39,7 +48,7 @@ void ModelNode::registerChangeHandler(const OnModelNodeChangeFunction &onModelNo
 
     if(passToChildren){
         modelChangeHandlersForChildren.push_back(onModelNodeChange);
-        for(ModelNodePointerList::iterator it = children.begin(); it != children.end(); ++it){
+        for(auto it = children.begin(); it != children.end(); ++it){
             (*it)->registerChangeHandler(onModelNodeChange, true);
         }
     }
@@ -50,7 +59,7 @@ void ModelNode::registerChangeHandler(const ModelChangeHandlerVector &onModelNod
 
     if(passToChildren){
         modelChangeHandlersForChildren.insert(modelChangeHandlersForChildren.end(), onModelNodeChanges.begin(), onModelNodeChanges.end());
-        for(ModelNodePointerList::iterator it = children.begin(); it != children.end(); ++it){
+        for(auto it = children.begin(); it != children.end(); ++it){
             (*it)->registerChangeHandler(onModelNodeChanges, true);
         }
     }
@@ -60,15 +69,35 @@ void ModelNode::addChild(ModelNode *child){
     child->parent = this;
     children.push_back(child);
 
+    if(changeEventsPaused){
+        child->pauseChangeEvents();
+    }
     child->registerChangeHandler(modelChangeHandlersForChildren, true);
-    child->triggerChange(ModelNodeChangeType::INSERT);
+    child->triggerChangeEvent(ModelNodeChangeEventType::INSERT);
 }
 
-void ModelNode::triggerChange(ModelNodeChangeType modelNodeChangeType){
-    if(modelNodeChangeType != ModelNodeChangeType::INSERT || triggerInsertChange){
-        for(ModelChangeHandlerVector::iterator it = modelChangeHandlers.begin(); it != modelChangeHandlers.end(); ++it){
-            (*it)(*this, modelNodeChangeType);
+void ModelNode::triggerChangeEvent(ModelNodeChangeEventType modelNodeChangeEventType){
+    if(!changeEventsPaused){
+        bool triggerChangeEvent = false;
+        //TODO: check for isValueNode
+        //TODO: work over this logic
+        switch(modelNodeChangeEventType){
+            case ModelNodeChangeEventType::UPDATE:  
+                triggerChangeEvent = true;
+                updateChangeEventStored = false;
+                break;
+            case ModelNodeChangeEventType::INSERT: 
+                triggerChangeEvent = insertChangeEventStored; 
+                insertChangeEventStored = false;
+                break;
         }
+        if(triggerChangeEvent){
+            for(auto it = modelChangeHandlers.begin(); it != modelChangeHandlers.end(); ++it){
+                (*it)(*this, modelNodeChangeEventType);
+            }
+        }
+    }else if(modelNodeChangeEventType ==  ModelNodeChangeEventType::UPDATE){
+        updateChangeEventStored = true;
     }
 }
 
@@ -81,31 +110,50 @@ const std::string &ModelNode::getValue(){
 }
 
 void ModelNode::setValue(const std::string &value, bool triggerChange){
-    //TODO: log whole mqttPath if trace level is set 
-    logger.get()->trace("setValue with value '{}' on node '{}'", value, mqttPathSegment);
-    if(!valueNode){
-       throw std::runtime_error("Illegal operation: Can not set value on non-value node '" + mqttPathSegment + "'");
+    //whole mqtt path should only be generated if the log level is fitting:
+    if((*logger).should_log(spdlog::level::level_enum::trace)){
+        logger.get()->trace("setValue with value '{}' on node '{}'", value, getMqttPath());
     }
     
-    //a change of the value and the resulting trigger of the changeHandlers should not be interrupted by parallel changes 
+    if(!valueNode){
+       throw std::logic_error("Illegal operation: Can not set value on non-value node '" + mqttPathSegment + "'");
+    }
+    
     valueSetMutex.lock();
     triggerChange = triggerChange && this->value != value;
     this->value = value;
-    
-    if(triggerChange){
-        this->triggerChange(ModelNodeChangeType::UPDATE);
-    }
     valueSetMutex.unlock();
+
+    if(triggerChange){
+        this->triggerChangeEvent(ModelNodeChangeEventType::UPDATE);
+    }
 }
 
 const std::vector<ModelNode*> &ModelNode::getChildren(){
     return children;
 }
 
-void ModelNode::retriggerInsertChangeRecursive(){
-    triggerChange(ModelNodeChangeType::INSERT);
+void ModelNode::pauseChangeEvents(){
+    changeEventsPaused = true;
+    
     for(auto it = children.begin(); it != children.end(); ++it){
-        (*it)->retriggerInsertChangeRecursive();
+        (*it)->pauseChangeEvents();
     }
 }
 
+void ModelNode::resumeChangeEvents(){
+    changeEventsPaused = false;
+    if(updateChangeEventStored){
+        triggerChangeEvent(ModelNodeChangeEventType::UPDATE);
+    }if(insertChangeEventStored){
+        triggerChangeEvent(ModelNodeChangeEventType::INSERT);
+    }    
+
+    for(auto it = children.begin(); it != children.end(); ++it){
+        (*it)->resumeChangeEvents();
+    }
+}
+
+bool ModelNode::isSubscriptionNode(){
+    return subscriptionNode;
+}

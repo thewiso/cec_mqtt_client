@@ -30,5 +30,5 @@ class MqttClient{
         MqttClientCallback *mqttClientCallback;
 
         void publish(std::string topic, std::string value);
-        void modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType);
+        void modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType);
 };

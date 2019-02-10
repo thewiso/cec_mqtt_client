@@ -1,9 +1,8 @@
 #include "log_level_property_holder.h"
 #include "property_exception.h"
+#include "utilities.h"
 
 #include <map>
-#include <cctype>
-#include <algorithm>
 #include <stdexcept>
         
 LogLevelPropertyHolder::LogLevelPropertyHolder(const std::string &name, SpdLogLevel *value, bool mandatory): GenericPropertyHolder(name, value, mandatory){
@@ -11,7 +10,7 @@ LogLevelPropertyHolder::LogLevelPropertyHolder(const std::string &name, SpdLogLe
         
 SpdLogLevel LogLevelPropertyHolder::parseValue(const std::string &valueString){
     std::string logLevelString = valueString;
-    std::transform(logLevelString.begin(), logLevelString.end(), logLevelString.begin(), ::tolower);
+    Utilities::ToLower(logLevelString);
 
     auto iterator = STRING_LITERAL_2_SPD_LOG_LEVEL.find(logLevelString);
     if(iterator != STRING_LITERAL_2_SPD_LOG_LEVEL.end()){

@@ -5,14 +5,14 @@
 class GeneralModel: public ModelNode{
     public:
         GeneralModel();
+
+        //TODO: return references
         ModelNode *getActiveSourceLogicalAddress();
 
-        ModelNode *getActiveSourceLogicalAddressCommand();
         ModelNode *getClientOSDNameCommand();
 
     private:
         ModelNode *activeSourceLogicalAddress;
         ModelNode *commands;
         ModelNode *clientOSDNameCommand;
-        ModelNode *activeSourceLogicalAddressCommand;
 };

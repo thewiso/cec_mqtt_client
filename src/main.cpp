@@ -70,12 +70,11 @@ int main(int argc, char* argv[])
         mqttClient->connect();
         cecClient->connect();
 
-        //TODO: set a trigger state to model, so changes before the init of all components are saved and then fired
-        //update: only the last event is fired
-        //TODO: clear command nodes at start
-        model->retriggerInsertChangeRecursive();
-
         generalLogger.get()->info("Successfully initialized client.");
+        
+        //TODO: clear command nodes at start
+        model->resumeChangeEvents();
+
         while(!interrupt.load()){
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
@@ -83,6 +82,7 @@ int main(int argc, char* argv[])
         //FIXME:
         //update activeSourceDeviceId when turning tv on / off
         //update device 
+        //activeSourceId is unknow at start
 
         //TODO: TEST
         //toggle activeDevice

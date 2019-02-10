@@ -12,15 +12,11 @@ MqttClientCallback::MqttClientCallback(mqtt::async_client &client): client(clien
 void MqttClientCallback::connected(const std::string &cause){
     logger.get()->info("Connecting to MQTT server succedeed.");
 
+    subscriptionNodesVectorMutex.lock();
     for(auto it = subscriptionNodes.begin(); it != subscriptionNodes.end(); ++it){
-        //TODO QOS = 1?
-        logger.get()->debug("(Re)Subscribing to mqtt topic '{}'", (*it)->getMqttPath());
-        try{
-            client.subscribe((*it)->getMqttPath(), 1, nullptr, *this);
-        }catch(const std::exception &e){
-            logger.get()->error("Exception occured while subscribing to mqtt topic: {}", e.what());
-        }
+        subscribeToNode(*(*it));          
     }
+    subscriptionNodesVectorMutex.unlock();
 }
 
 //callback functions:
@@ -64,6 +60,22 @@ void MqttClientCallback::on_success(const mqtt::token &token) {
     }
 }
 
-void MqttClientCallback::addNodeForSubscription(ModelNode *node){
-    subscriptionNodes.push_back(node);
+void MqttClientCallback::addNodeForSubscription(ModelNode &node){
+    subscriptionNodes.push_back(&node);
+    if(client.is_connected()){
+        subscriptionNodesVectorMutex.lock();
+        subscribeToNode(node);
+        subscriptionNodesVectorMutex.unlock();
+    }
+}
+
+void MqttClientCallback::subscribeToNode(ModelNode &node){
+    try{
+          //TODO QOS = 1?
+        std::string mqttPath = node.getMqttPath();
+        logger.get()->debug("(Re)Subscribing to mqtt topic '{}'", mqttPath);
+        client.subscribe(mqttPath, 0, nullptr, *this);
+    }catch(const std::exception &e){
+        logger.get()->error("Exception occured while subscribing to mqtt topic: {}", e.what());
+    }
 }

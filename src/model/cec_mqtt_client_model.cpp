@@ -29,6 +29,7 @@ std::pair<DeviceModel*, bool> CecMqttClientModel::getOrCreateDeviceModel(const s
     if (createDevice){
         DeviceModel *newModel  = new DeviceModel(logicalAddress);
         deviceParentNode->addChild(newModel);
+        newModel->resumeChangeEvents();
         deviceModels.push_back(newModel);
         newModel->getLogicalAddress()->setValue(logicalAddress);
         retVal.first = newModel;

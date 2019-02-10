@@ -7,10 +7,15 @@ DeviceModel::DeviceModel(const std::string &mqttPathSegment) : ModelNode(mqttPat
     this->powerStatus = new ModelNode("powerStatus", true);
     this->logicalAddress = new ModelNode("logicalAddress", true);
 
+    powerStatusCommand = new ModelNode("powerStatus", true, std::string(), true, true);
+    this->commands = new ModelNode("COMMANDS");
+    this->commands->addChild(powerStatusCommand);
+
     addChild(name);
     addChild(isActive);
     addChild(powerStatus);
     addChild(logicalAddress);
+    addChild(commands);
 }
 
 ModelNode *DeviceModel::getName(){
@@ -27,4 +32,8 @@ ModelNode *DeviceModel::getPowerStatus(){
 
 ModelNode *DeviceModel::getLogicalAddress(){
     return logicalAddress;
+}
+
+ModelNode *DeviceModel::getPowerStatusCommand(){
+    return powerStatusCommand;
 }

@@ -10,19 +10,20 @@
 #include "spdlog/logger.h"
 
 
-enum ModelNodeChangeType{
+enum ModelNodeChangeEventType{
     INSERT,
     UPDATE
 };
 
 class ModelNode{
-    typedef std::function<void(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType)> OnModelNodeChangeFunction;
+    typedef std::function<void(ModelNode &modelNode, ModelNodeChangeEventType ModelNodeChangeEventType)> OnModelNodeChangeFunction;
     typedef std::vector<OnModelNodeChangeFunction> ModelChangeHandlerVector;
     typedef std::vector<ModelNode*> ModelNodePointerList;
 
      //TODO: destructor in ModelNode for children
     public:
-        ModelNode(const std::string &mqttPathSegment, bool valueNode = false, const std::string &value = "", bool triggerInsertChange = false);
+        ModelNode(const std::string &mqttPathSegment, bool valueNode = false, const std::string &value = std::string(), bool triggerInsertChangeEvent = false, bool subscriptionNode = false);
+        virtual ~ModelNode();
         std::string getMqttPath();
         ModelNode *getParent();
         void setParent(ModelNode *parent);
@@ -33,11 +34,12 @@ class ModelNode{
         const std::string &getValue();
         void setValue(const std::string &value, bool triggerChange=true);
         bool isValueNode();
-        void retriggerInsertChangeRecursive();
-
+        void pauseChangeEvents();
+        void resumeChangeEvents();
+        bool isSubscriptionNode();
 
     protected:
-        void triggerChange(ModelNodeChangeType modelNodeChangeType);
+        void triggerChangeEvent(ModelNodeChangeEventType modelNodeChangeEventType);
         std::shared_ptr<spdlog::logger> logger;
         ModelNodePointerList children;
         ModelNode *parent;
@@ -47,7 +49,10 @@ class ModelNode{
         std::string value;
         std::mutex valueSetMutex;
         bool valueNode;
-        bool triggerInsertChange;
+        bool insertChangeEventStored;
+        bool updateChangeEventStored;
+        bool changeEventsPaused;
+        bool subscriptionNode;
         //using 2 lists instead of a map because functions cannot be compared
         ModelChangeHandlerVector modelChangeHandlers;
         ModelChangeHandlerVector modelChangeHandlersForChildren;
@@ -56,5 +61,5 @@ class ModelNode{
         
 };
 
-typedef std::function<void(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType)> OnModelNodeChangeFunction;
+typedef std::function<void(ModelNode &modelNode, ModelNodeChangeEventType ModelNodeChangeEventType)> OnModelNodeChangeFunction;
 typedef std::vector<OnModelNodeChangeFunction> ModelChangeHandlerVector;

@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-
+#include <mutex>
 
 
 class MqttClientCallback: public mqtt::callback, public mqtt::iaction_listener{
@@ -21,11 +21,15 @@ class MqttClientCallback: public mqtt::callback, public mqtt::iaction_listener{
         void on_failure(const mqtt::token &token) override;
         void on_success(const mqtt::token &token) override;
 
-        void addNodeForSubscription(ModelNode *node);
+        void addNodeForSubscription(ModelNode &node);
 
     private:
+        void subscribeToNode(ModelNode &node);
+        
         mqtt::async_client &client;
         std::shared_ptr<spdlog::logger> logger;
-        std::vector<ModelNode*> subscriptionNodes;
+        std::vector<ModelNode*> subscriptionNodes;       
+        std::mutex subscriptionNodesVectorMutex;
+
         
 };

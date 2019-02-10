@@ -1,6 +1,7 @@
 #include "cec_client.h"
 #include "utilities.h"
 #include "spdlog/spdlog.h"
+#include "device_model.h"
 
 #include <algorithm> 
 #include <utility>
@@ -8,6 +9,9 @@
 #include <array>
 #include <string>
 #include <iostream>
+#include <typeinfo>
+#include <stdexcept>
+
 // cecloader.h uses std::cout _without_ including iosfwd or iostream
 // Furthermore is uses cout and not std::cout
 using std::cout;
@@ -24,6 +28,37 @@ const CEC::cec_opcode CecClient::RELEVANT_OPCODES[] = {
     CEC::cec_opcode::CEC_OPCODE_STANDBY             //is sent if TV is switched OFF
 };
 
+const int CecClient::MAX_OSD_NAME_LENGTH = 13;
+
+const std::map<CEC::cec_logical_address, std::string> CecClient::CEC_LOGICAL_ADRESS_2_STRING_LITERAL = {
+    {CEC::cec_logical_address::CECDEVICE_UNKNOWN         , "UNKNOWN"},
+    {CEC::cec_logical_address::CECDEVICE_TV              , "TV"},
+    {CEC::cec_logical_address::CECDEVICE_RECORDINGDEVICE1, "RECORDINGDEVICE1"},
+    {CEC::cec_logical_address::CECDEVICE_RECORDINGDEVICE2, "RECORDINGDEVICE2"},
+    {CEC::cec_logical_address::CECDEVICE_TUNER1          , "TUNER1"},
+    {CEC::cec_logical_address::CECDEVICE_PLAYBACKDEVICE1 , "PLAYBACKDEVICE1"},
+    {CEC::cec_logical_address::CECDEVICE_AUDIOSYSTEM     , "AUDIOSYSTEM"},
+    {CEC::cec_logical_address::CECDEVICE_TUNER2          , "TUNER2"},
+    {CEC::cec_logical_address::CECDEVICE_TUNER3          , "TUNER3"},
+    {CEC::cec_logical_address::CECDEVICE_PLAYBACKDEVICE2 , "PLAYBACKDEVICE2"},
+    {CEC::cec_logical_address::CECDEVICE_RECORDINGDEVICE3, "RECORDINGDEVICE3"},
+    {CEC::cec_logical_address::CECDEVICE_TUNER4          , "TUNER4"},
+    {CEC::cec_logical_address::CECDEVICE_PLAYBACKDEVICE3 , "PLAYBACKDEVICE3"},
+    {CEC::cec_logical_address::CECDEVICE_RESERVED1       , "RESERVED1"},
+    {CEC::cec_logical_address::CECDEVICE_RESERVED2       , "RESERVED2"},
+    {CEC::cec_logical_address::CECDEVICE_FREEUSE         , "FREEUSE"},
+    {CEC::cec_logical_address::CECDEVICE_UNREGISTERED    , "UNREGISTERED"},
+    {CEC::cec_logical_address::CECDEVICE_BROADCAST       , "BROADCAST"}
+};
+
+const std::map<CEC::cec_power_status, std::string> CecClient::CEC_POWER_STATUS_2_STRING_LITERAL = {
+    {CEC::cec_power_status::CEC_POWER_STATUS_ON                         , "ON"},
+    {CEC::cec_power_status::CEC_POWER_STATUS_STANDBY                    , "STANDBY"},
+    {CEC::cec_power_status::CEC_POWER_STATUS_IN_TRANSITION_STANDBY_TO_ON, "IN_TRANSITION_STANDBY_TO_ON"},
+    {CEC::cec_power_status::CEC_POWER_STATUS_IN_TRANSITION_ON_TO_STANDBY, "IN_TRANSITION_ON_TO_STANDBY"},
+    {CEC::cec_power_status::CEC_POWER_STATUS_UNKNOWN                    , "UNKNOWN"}
+};
+
 CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model){
     this->properties = properties;
     this->model = model;
@@ -33,9 +68,6 @@ CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientMod
     this->logger = spdlog::get(Utilities::CEC_LOGGER_NAME);
 
     model->getGeneralModel()->getClientOSDNameCommand()->registerChangeHandler(std::bind( &CecClient::clientOSDNameCommandNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
-    model->getGeneralModel()->getActiveSourceLogicalAddress()->registerChangeHandler(std::bind( &CecClient::activeSourceLogicalAddressCommandNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
-
-    //TODO: add model listener
 
     bcm_host_init();
 
@@ -51,9 +83,8 @@ CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientMod
     config->deviceTypes.Add(CEC::CEC_DEVICE_TYPE_PLAYBACK_DEVICE);
 
     //TODO: devicename from configuration file
-    const std::string devicename("CECExample");
-    devicename.copy(config->strDeviceName, std::min(devicename.size(),13u) );
-
+    std::string deviceName("CECExample");
+    copyOSDDeviceNameToConfig(deviceName);
 }
 
 CecClient::~CecClient(){
@@ -82,14 +113,22 @@ void CecClient::static_sourceActivatedHandler(void* UNUSED, const CEC::cec_logic
 }
 
 void CecClient::static_commandReceivedHandler(void* UNUSED, const CEC::cec_command* command){
-    //if no poll command
+    //if no poll command:
     if(command->opcode_set == 1){
         if (std::find(std::begin(RELEVANT_OPCODES), std::end(RELEVANT_OPCODES), command->opcode) != std::end(RELEVANT_OPCODES)){
             getInstance()->updateDeviceModel();
             getInstance()->updateGeneralModel();
         }
         //TODO: debug log
-        // cout << "from " << std::dec << (int)command->initiator << " to " << (int)command->destination << " command: " << std::hex << "0x" << (int)command->opcode << "\n";
+        if(command->opcode == CEC::cec_opcode::CEC_OPCODE_ACTIVE_SOURCE){
+            CEC::cec_datapacket parameter = command->parameters;
+            std::string parameterString;
+            for(int i=0; i<parameter.size; i++){
+                parameterString += ":" + std::to_string(parameter[i]);
+            }
+            // cout << "ActiveSource from " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->initiator) << " to " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->destination) << " parameter: '" << parameterString << "'\n";
+        }
+        // cout << "from " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->initiator) << " to " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->destination) << " command: " << std::hex << "0x" << (int)command->opcode << "\n";
     }
     
 }
@@ -137,7 +176,7 @@ void CecClient::updateGeneralModel(){
     CEC::cec_logical_address activeSource = adapter->GetActiveSource();
     adapterMutex.unlock();
 
-    model->getGeneralModel()->getActiveSourceLogicalAddress()->setValue(Utilities::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(activeSource));
+    model->getGeneralModel()->getActiveSourceLogicalAddress()->setValue(CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(activeSource));
 
     //TODO: updates after commands should be triggered (name changed -> configuration changed?)
 }
@@ -155,7 +194,7 @@ void CecClient::updateDeviceModel(){
 
     for(int i=0; i<activeDevicesLength; i++){
         CEC::cec_logical_address currentAddress = (CEC::cec_logical_address)i;
-        std::string currentAddressString = Utilities::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(currentAddress);
+        std::string currentAddressString = CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(currentAddress);
         
         if(activeDevices[i]){
             
@@ -168,28 +207,30 @@ void CecClient::updateDeviceModel(){
             DeviceModel *activeDevice = activeDevicePair.first;
             activeDevice->getName()->setValue(odsName);
             activeDevice->getIsActive()->setValue(Utilities::TRUE_STRING_LITERAL);
-            activeDevice->getPowerStatus()->setValue(Utilities::CEC_POWER_STATUS_2_STRING_LITERAL.at(powerStatus));
+            activeDevice->getPowerStatus()->setValue(CEC_POWER_STATUS_2_STRING_LITERAL.at(powerStatus));
 
+            //if device was created by getOrCreateDeviceModel:
             if(activeDevicePair.second){
-                //TODO: register change handler on new model
+                activeDevice->getPowerStatusCommand()->registerChangeHandler(std::bind(&CecClient::devicePowerStateCommandNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
             }
         }else{
             //set activity and power state of other, already created and now inactive devices
-            std::vector<DeviceModel*>::iterator iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [currentAddressString] (DeviceModel *deviceModel) { return deviceModel->getLogicalAddress()->getValue() == currentAddressString; } ); 
+            auto iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [currentAddressString] (DeviceModel *deviceModel) { return deviceModel->getLogicalAddress()->getValue() == currentAddressString; } ); 
             if(iterator != deviceModels.end()){
                 (*iterator)->getIsActive()->setValue(Utilities::FALSE_STRING_LITERAL);
-                (*iterator)->getPowerStatus()->setValue(Utilities::CEC_POWER_STATUS_2_STRING_LITERAL.at(CEC::cec_power_status::CEC_POWER_STATUS_UNKNOWN));
+                (*iterator)->getPowerStatus()->setValue(CEC_POWER_STATUS_2_STRING_LITERAL.at(CEC::cec_power_status::CEC_POWER_STATUS_UNKNOWN));
             }
 
         }
     } 
 }
 
-void CecClient::clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType){
+void CecClient::clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType){
     std::string deviceName = modelNode.getValue();
     if(!deviceName.empty()){
+
+        copyOSDDeviceNameToConfig(deviceName);
         (*logger).debug("Changing client OSD name to {}...", deviceName);
-        deviceName.copy(config->strDeviceName, std::min(deviceName.size(),13u));
         
         adapterMutex.lock();
         bool success = adapter->SetConfiguration(config);
@@ -197,12 +238,69 @@ void CecClient::clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, Mode
 
         if(success){
             (*logger).debug("Changing client OSD name to {} succedeed.", deviceName);
+            updateDeviceModel();
         }else{
-            //TODO: log error with all attributes of config
+            (*logger).error("Failed to change client OSD name to {}.", deviceName);
+        }
+
+        modelNode.setValue(std::string());
+    }
+}
+
+void CecClient::devicePowerStateCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType){
+    std::string powerStateString = modelNode.getValue();
+    if(!powerStateString.empty()){
+        try{
+            DeviceModel &deviceModel = dynamic_cast<DeviceModel&>(*(modelNode.getParent()->getParent()));
+            
+            std::string logicalAddressString = deviceModel.getLogicalAddress()->getValue();
+            auto foundLogicalAddressIterator = std::find_if(CEC_LOGICAL_ADRESS_2_STRING_LITERAL.begin(), CEC_LOGICAL_ADRESS_2_STRING_LITERAL.end(), [logicalAddressString] (auto pair) { return pair.second == logicalAddressString; } );
+            
+            if(foundLogicalAddressIterator != CEC_LOGICAL_ADRESS_2_STRING_LITERAL.end()){
+                CEC::cec_logical_address logicalAddress = foundLogicalAddressIterator->first;
+                Utilities::ToUpper(powerStateString);
+
+                //power on device:
+                if(powerStateString == CEC_POWER_STATUS_2_STRING_LITERAL.at(CEC::CEC_POWER_STATUS_ON)){
+                    adapterMutex.lock();
+                    bool success = adapter->PowerOnDevices(logicalAddress);
+                    adapterMutex.unlock();
+
+                    if(success){
+                        (*logger).debug("Successfully turned on device {}", logicalAddressString);
+                    }else{
+                        (*logger).error("Could not turn on device {}", logicalAddressString);
+                    }
+                //standby device:
+                }else if(powerStateString == CEC_POWER_STATUS_2_STRING_LITERAL.at(CEC::CEC_POWER_STATUS_STANDBY)){
+                    adapterMutex.lock();
+                    bool success = adapter->StandbyDevices(logicalAddress);
+                    adapterMutex.unlock();
+
+                    if(success){
+                        (*logger).debug("Successfully turned device {} into standby", logicalAddressString);
+                    }else{
+                        (*logger).error("Could not standby device {}", logicalAddressString);
+                    }
+                }else{
+                    (*logger).error("{} is not a valid power state to set", powerStateString);
+                }
+            }else{
+                (*logger).error("Could not parse {} to a valid cec logical address", logicalAddressString);
+            }
+            modelNode.setValue(std::string());
+
+        }catch(const std::bad_cast &ex){
+            throw std::logic_error("Could not cast modelNode to DeviceModel in devicePowerStateCommandNodeChangeHandler");
         }
     }
 }
 
-void CecClient::activeSourceLogicalAddressCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType){
-    (*logger).debug("Changing active device to {}", modelNode.getValue());
+void CecClient::copyOSDDeviceNameToConfig(std::string &deviceName){
+    if(deviceName.size() > MAX_OSD_NAME_LENGTH){
+        (*logger).warn("Given OSD device name '{}' has more than allowed {} characters and is shortened to this length", deviceName, MAX_OSD_NAME_LENGTH);
+    }
+    deviceName.resize(MAX_OSD_NAME_LENGTH);
+    std::size_t length = MAX_OSD_NAME_LENGTH;
+    deviceName.copy(config->strDeviceName, length);
 }

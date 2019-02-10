@@ -18,8 +18,6 @@ MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientM
     this->client = new mqtt::async_client(this->properties.getMqttBrokerAdress(), this->properties.getMqttClientId());
 
     this->mqttClientCallback = new MqttClientCallback(*client);
-    mqttClientCallback->addNodeForSubscription(model->getGeneralModel()->getClientOSDNameCommand());
-    mqttClientCallback->addNodeForSubscription(model->getGeneralModel()->getActiveSourceLogicalAddressCommand());
     this->client->set_callback(*mqttClientCallback);
 
     this->model = model;
@@ -49,10 +47,10 @@ void MqttClient::connect(){
             
             try{
                 if(firstConnect){
-                    client->connect(connectionOptions);
+                    client->connect(connectionOptions)->wait();
                     firstConnect = false;
                 }else{
-                    client->reconnect();
+                    client->reconnect()->wait();
                 }
             }catch(const mqtt::exception& ex){
                 logger.get()->warn("Exception during connecting: {}", ex.what());
@@ -65,7 +63,10 @@ void MqttClient::connect(){
     }
 }
 
-void MqttClient::modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeType modelNodeChangeType){
+void MqttClient::modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType){
+    if(modelNodeChangeEventType == ModelNodeChangeEventType::INSERT && modelNode.isSubscriptionNode()){
+        mqttClientCallback->addNodeForSubscription(modelNode);
+    }
     if(modelNode.isValueNode()){
         publish(modelNode.getMqttPath(), modelNode.getValue());
     }
@@ -73,9 +74,10 @@ void MqttClient::modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeTyp
 
 void MqttClient::publish(std::string topic, std::string value){
     try{
+        (*logger).trace("Publishing value '{}' for topic '{}'", value, topic);
         client->publish(topic, value.c_str(), strlen(value.c_str()), 0, false);
     }catch (const mqtt::exception &ex) {
-        logger.get()->error("Could not connect publish '{}' = '{}'. Reason: {}", topic, value, ex.get_message());
+        (*logger).error("Could not connect publish '{}' = '{}'. Reason: {}", topic, value, ex.get_message());
     }
 
    

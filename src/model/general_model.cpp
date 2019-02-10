@@ -4,10 +4,8 @@
 GeneralModel::GeneralModel(): ModelNode("general"){
     this->activeSourceLogicalAddress = new ModelNode("activeSourceLogicalAddress", true);
     
-    activeSourceLogicalAddressCommand = new ModelNode("activeSourceLogicalAddress", true);
-    clientOSDNameCommand = new ModelNode("clientOSDName", true);
+    clientOSDNameCommand = new ModelNode("clientOSDName", true, std::string(), true, true);
     this->commands = new ModelNode("COMMANDS");
-    this->commands->addChild(activeSourceLogicalAddressCommand);
     this->commands->addChild(clientOSDNameCommand);
 
     addChild(commands);
@@ -16,10 +14,6 @@ GeneralModel::GeneralModel(): ModelNode("general"){
 
 ModelNode *GeneralModel::getActiveSourceLogicalAddress(){
     return activeSourceLogicalAddress;
-}
-
-ModelNode *GeneralModel::getActiveSourceLogicalAddressCommand(){
-    return activeSourceLogicalAddressCommand;
 }
 
 ModelNode *GeneralModel::getClientOSDNameCommand(){

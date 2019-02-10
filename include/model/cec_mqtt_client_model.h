@@ -13,9 +13,11 @@ class CecMqttClientModel: public ModelNode{
         CecMqttClientModel(const std::string &mqttRootPathSegment);
         GeneralModel *getGeneralModel();
         const std::vector<DeviceModel*> &getDeviceModels();
+        //TODO: return references? (may cause error)
         std::pair<DeviceModel*, bool> getOrCreateDeviceModel(const std::string &logicalAddress);
 
     private:
+    //TODO: return references
         std::vector<DeviceModel*> deviceModels;
         ModelNode *deviceParentNode;
         GeneralModel *generalModel;
