@@ -82,9 +82,7 @@ CecClient::CecClient(const CecMqttClientProperties &properties, CecMqttClientMod
     config->callbacks = callbacks;
     config->deviceTypes.Add(CEC::CEC_DEVICE_TYPE_PLAYBACK_DEVICE);
 
-    //TODO: devicename from configuration file
-    std::string deviceName("CECExample");
-    copyOSDDeviceNameToConfig(deviceName);
+    copyOSDDeviceNameToConfig(properties.getCecDeviceName());
 }
 
 CecClient::~CecClient(){

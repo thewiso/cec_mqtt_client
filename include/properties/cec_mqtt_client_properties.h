@@ -14,6 +14,7 @@ class CecMqttClientProperties
         const std::string &getMqttClientId();
         const std::string &getMqttBrokerAdress();
         const std::string &getMqttTopicPrefix();
+        const std::string &getCecDeviceName();
         bool getLoggerLogToConsole();
         SpdLogLevel getLoggerLevel();
 
@@ -23,6 +24,8 @@ class CecMqttClientProperties
         std::string mqttBrokerAdress;
         std::string mqttClientId;
         std::string mqttTopicPrefix;
+
+        std::string cecDeviceName;
 
         bool loggerLogToConsole;
         SpdLogLevel loggerLevel;
