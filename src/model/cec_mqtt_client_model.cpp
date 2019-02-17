@@ -3,40 +3,44 @@
 #include <algorithm>
 
 CecMqttClientModel::CecMqttClientModel(const std::string &mqttRootPathSegment): ModelNode(mqttRootPathSegment){
-    generalModel = new GeneralModel();
-    deviceParentNode = new ModelNode("devices");
+   
+}
+
+void CecMqttClientModel::init(){
+    this->generalModel = std::make_shared<GeneralModel>();
+    this->deviceParentNode = std::make_shared<ModelNode>("devices");
 
     addChild(generalModel);
     addChild(deviceParentNode);
+
+    ModelNode::init();
 }
 
-GeneralModel *CecMqttClientModel::getGeneralModel(){
-    return generalModel;
+GeneralModel &CecMqttClientModel::getGeneralModel(){
+    return *generalModel;
 }
 
-const std::vector<DeviceModel*> &CecMqttClientModel::getDeviceModels(){
+const std::vector<std::shared_ptr<DeviceModel>> &CecMqttClientModel::getDeviceModels(){
     return deviceModels;
 }
 
-std::pair<DeviceModel*, bool> CecMqttClientModel::getOrCreateDeviceModel(const std::string &logicalAddress){
-    std::vector<DeviceModel*>::iterator iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [logicalAddress] (DeviceModel *deviceModel) { return deviceModel->getLogicalAddress()->getValue() == logicalAddress; } ); 
-
+std::pair<DeviceModel&, bool> CecMqttClientModel::getOrCreateDeviceModel(const std::string &logicalAddress){
+    auto iterator = std::find_if(deviceModels.begin(), deviceModels.end(), [logicalAddress] (DeviceModelPointer &deviceModel) { return (*deviceModel).getLogicalAddress().getValue() == logicalAddress; } ); 
     bool createDevice = iterator == deviceModels.end();
+    DeviceModelPointer deviceModel;
     
-    std::pair<DeviceModel*, bool> retVal;    
-    retVal.second = createDevice;
-
     if (createDevice){
-        DeviceModel *newModel  = new DeviceModel(logicalAddress);
-        deviceParentNode->addChild(newModel);
-        newModel->resumeChangeEvents();
-        deviceModels.push_back(newModel);
-        newModel->getLogicalAddress()->setValue(logicalAddress);
-        retVal.first = newModel;
+        deviceModel = std::make_shared<DeviceModel>(logicalAddress);
+        deviceModel->init();
+        deviceParentNode->addChild(deviceModel);
+        deviceModel->resumeChangeEvents();
+        deviceModel->getLogicalAddress().setValue(logicalAddress);
+        deviceModels.push_back(deviceModel);
     }else{
-        retVal.first = (*iterator);
+        deviceModel = *iterator;
     }
-
+    
+    std::pair<DeviceModel&, bool> retVal(*deviceModel, createDevice);    
     return retVal;
 }
 

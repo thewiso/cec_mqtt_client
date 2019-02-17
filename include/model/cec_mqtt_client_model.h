@@ -8,17 +8,18 @@
 
 
 class CecMqttClientModel: public ModelNode{
-    
+    typedef std::shared_ptr<DeviceModel> DeviceModelPointer;
+
     public: 
         CecMqttClientModel(const std::string &mqttRootPathSegment);
-        GeneralModel *getGeneralModel();
-        const std::vector<DeviceModel*> &getDeviceModels();
-        //TODO: return references? (may cause error)
-        std::pair<DeviceModel*, bool> getOrCreateDeviceModel(const std::string &logicalAddress);
+        virtual void init();
+        
+        GeneralModel &getGeneralModel();
+        const std::vector<std::shared_ptr<DeviceModel>> &getDeviceModels();
+        std::pair<DeviceModel&, bool> getOrCreateDeviceModel(const std::string &logicalAddress);
 
     private:
-    //TODO: return references
-        std::vector<DeviceModel*> deviceModels;
-        ModelNode *deviceParentNode;
-        GeneralModel *generalModel;
+        std::vector<DeviceModelPointer> deviceModels;
+        std::shared_ptr<ModelNode> deviceParentNode;
+        std::shared_ptr<GeneralModel> generalModel;
 };

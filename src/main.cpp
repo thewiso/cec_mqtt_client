@@ -52,27 +52,27 @@ int main(int argc, char* argv[])
         properties.readFile("cec_mqtt_client.conf");
 
         if(!properties.getLoggerLogToConsole()){
-            (*consoleSink).set_level(spdlog::level::level_enum::off);
+            consoleSink->set_level(spdlog::level::level_enum::off);
         }
         SpdLogLevel logLevel = properties.getLoggerLevel();
-        generalLogger.get()->set_level(logLevel);
-        mqttLogger.get()->set_level(logLevel);
-        cecLogger.get()->set_level(logLevel);
+        generalLogger->set_level(logLevel);
+        mqttLogger->set_level(logLevel);
+        cecLogger->set_level(logLevel);
 
-        generalLogger.get()->info("Finished reading property file.");
-        generalLogger.get()->info("Initializing client...");
+        generalLogger->info("Finished reading property file.");
+        generalLogger->info("Initializing client...");
 
-        CecMqttClientModel *model = new CecMqttClientModel(properties.getMqttTopicPrefix());
-        
-        MqttClient *mqttClient = new MqttClient(properties, model);
-        CecClient *cecClient = CecClient::getInstance(properties, model);
+        auto model = std::make_shared<CecMqttClientModel>(properties.getMqttTopicPrefix());
+        model->init();
 
-        mqttClient->connect();
-        cecClient->connect();
+        MqttClient mqttClient(properties, model);
+        CecClient &cecClient = CecClient::getInstance(properties, model);
 
-        generalLogger.get()->info("Successfully initialized client.");
-        
-        //TODO: clear command nodes at start
+        mqttClient.connect();
+        cecClient.connect();
+
+        generalLogger->info("Successfully initialized client.");
+
         model->resumeChangeEvents();
 
         while(!interrupt.load()){
@@ -85,15 +85,14 @@ int main(int argc, char* argv[])
         //activeSourceId is unknow at start
 
         //TODO: TEST
-        //toggle activeDevice
         //hdmi disconnect cec
-        generalLogger.get()->info("Exiting program after user interrupt.");
+        generalLogger->info("Exiting program after user interrupt.");
         return 0;
     }catch(const PropertyException &propertyException){
-        generalLogger.get()->error("Exception occured while reading property file: {}", propertyException.what());
+        generalLogger->error("Exception occured while reading property file: {}", propertyException.what());
     }catch(const std::exception &exception){
-        generalLogger.get()->error("Exception occured: {}", exception.what());
+        generalLogger->error("Exception occured: {}", exception.what());
     }
-    generalLogger.get()->info("Exiting program after exception.");
+    generalLogger->info("Exiting program after exception.");
     return -1;
 }

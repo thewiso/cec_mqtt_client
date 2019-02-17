@@ -10,14 +10,14 @@ CecMqttClientProperties::CecMqttClientProperties() : Properties(){
 }
 
 void CecMqttClientProperties::fillPropertyMap(){
-    propertyHolders.push_back(new StringPropertyHolder("MQTT_CLIENT_ID", &mqttClientId));
-    propertyHolders.push_back(new StringPropertyHolder("MQTT_TOPIC_PREFIX", &mqttTopicPrefix));
-    propertyHolders.push_back(new StringPropertyHolder("MQTT_BROKER_ADRESS", &mqttBrokerAdress, true));
+    propertyHolders.push_back(std::make_shared<StringPropertyHolder>("MQTT_CLIENT_ID", &mqttClientId));
+    propertyHolders.push_back(std::make_shared<StringPropertyHolder>("MQTT_TOPIC_PREFIX", &mqttTopicPrefix));
+    propertyHolders.push_back(std::make_shared<StringPropertyHolder>("MQTT_BROKER_ADRESS", &mqttBrokerAdress, true));
 
-    propertyHolders.push_back(new StringPropertyHolder("CEC_DEVICE_NAME", &cecDeviceName, true));
+    propertyHolders.push_back(std::make_shared<StringPropertyHolder>("CEC_DEVICE_NAME", &cecDeviceName, true));
 
-    propertyHolders.push_back(new BoolPropertyHolder("LOGGER_LOG_TO_CONSOLE", &loggerLogToConsole));
-    propertyHolders.push_back(new LogLevelPropertyHolder("LOGGER_LEVEL", &loggerLevel));
+    propertyHolders.push_back(std::make_shared<BoolPropertyHolder>("LOGGER_LOG_TO_CONSOLE", &loggerLogToConsole));
+    propertyHolders.push_back(std::make_shared<LogLevelPropertyHolder>("LOGGER_LEVEL", &loggerLevel));
 }
 
 const std::string &CecMqttClientProperties::getMqttClientId(){

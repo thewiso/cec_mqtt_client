@@ -1,6 +1,7 @@
 #include "mqtt_client_callback.h"
 #include "spdlog/spdlog.h"
 #include "utilities.h"
+#include "mqtt_client.h"
 
 #include <exception>
 #include <algorithm>
@@ -35,7 +36,7 @@ void MqttClientCallback::message_arrived(mqtt::const_message_ptr message){
     if(iterator != subscriptionNodes.end()){
         (*iterator)->setValue(message->get_payload_str());
     }else{
-        (*logger).error("Could not find model node for subscribed topic {}", topic);
+        logger->error("Could not find model node for subscribed topic {}", topic);
     }
 }
 
@@ -71,10 +72,9 @@ void MqttClientCallback::addNodeForSubscription(ModelNode &node){
 
 void MqttClientCallback::subscribeToNode(ModelNode &node){
     try{
-          //TODO QOS = 1?
         std::string mqttPath = node.getMqttPath();
         logger.get()->debug("(Re)Subscribing to mqtt topic '{}'", mqttPath);
-        client.subscribe(mqttPath, 0, nullptr, *this);
+        client.subscribe(mqttPath, MqttClient::DEFAULT_QOS, nullptr, *this);
     }catch(const std::exception &e){
         logger.get()->error("Exception occured while subscribing to mqtt topic: {}", e.what());
     }

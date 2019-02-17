@@ -23,7 +23,13 @@ ModelNode::~ModelNode(){
     
 }
 
-std::string ModelNode::getMqttPath(){
+void ModelNode::init(){
+    for(auto it = children.begin(); it != children.end(); ++it){
+        (*it)->init();
+    }
+}
+
+const std::string ModelNode::getMqttPath(){
     std::string retVal = "/" + mqttPathSegment;
 
     if(parent != nullptr){
@@ -33,13 +39,11 @@ std::string ModelNode::getMqttPath(){
     return retVal;
 }
 
-//TODO: reference return value
-ModelNode* ModelNode::getParent(){
-    return parent;
+ModelNode &ModelNode::getParent(){
+    return *parent;
 }
 
-//TODO: reference param
-void ModelNode::setParent(ModelNode *parent){
+void ModelNode::setParent(std::shared_ptr<ModelNode> parent){
     this->parent = parent;
 }
 
@@ -65,22 +69,20 @@ void ModelNode::registerChangeHandler(const ModelChangeHandlerVector &onModelNod
     }
 }
 
-void ModelNode::addChild(ModelNode *child){
-    child->parent = this;
+void ModelNode::addChild(std::shared_ptr<ModelNode> child){
+    child->setParent(shared_from_this());
     children.push_back(child);
 
     if(changeEventsPaused){
         child->pauseChangeEvents();
     }
-    child->registerChangeHandler(modelChangeHandlersForChildren, true);
     child->triggerChangeEvent(ModelNodeChangeEventType::INSERT);
+    child->registerChangeHandler(modelChangeHandlersForChildren, true);
 }
 
 void ModelNode::triggerChangeEvent(ModelNodeChangeEventType modelNodeChangeEventType){
-    if(!changeEventsPaused){
+    if(!changeEventsPaused && isValueNode()){
         bool triggerChangeEvent = false;
-        //TODO: check for isValueNode
-        //TODO: work over this logic
         switch(modelNodeChangeEventType){
             case ModelNodeChangeEventType::UPDATE:  
                 triggerChangeEvent = true;
@@ -111,7 +113,7 @@ const std::string &ModelNode::getValue(){
 
 void ModelNode::setValue(const std::string &value, bool triggerChange){
     //whole mqtt path should only be generated if the log level is fitting:
-    if((*logger).should_log(spdlog::level::level_enum::trace)){
+    if(logger->should_log(spdlog::level::level_enum::trace)){
         logger.get()->trace("setValue with value '{}' on node '{}'", value, getMqttPath());
     }
     
@@ -127,10 +129,6 @@ void ModelNode::setValue(const std::string &value, bool triggerChange){
     if(triggerChange){
         this->triggerChangeEvent(ModelNodeChangeEventType::UPDATE);
     }
-}
-
-const std::vector<ModelNode*> &ModelNode::getChildren(){
-    return children;
 }
 
 void ModelNode::pauseChangeEvents(){

@@ -3,23 +3,24 @@
 #include "model_node.h"
 
 class DeviceModel: public ModelNode{
-
+    typedef std::shared_ptr<ModelNode> ModelNodePointer;
+    
     public:
         DeviceModel(const std::string &mqttPathSegment);
-        //TODO: return references
-        ModelNode *getName();
-        ModelNode *getIsActive();
-        ModelNode *getPowerStatus();
-        ModelNode *getLogicalAddress();
+        virtual void init();
+        
+        ModelNode &getName();
+        ModelNode &getIsActive();
+        ModelNode &getPowerStatus();
+        ModelNode &getLogicalAddress();
 
-        ModelNode *getPowerStatusCommand();
+        ModelNode &getPowerStatusCommand();
         
     private:
-        ModelNode *name;
-        ModelNode *isActive;
-        ModelNode *powerStatus;
-        ModelNode *logicalAddress;
-
-        ModelNode *commands;
-        ModelNode *powerStatusCommand;
+        ModelNodePointer name;
+        ModelNodePointer isActive;
+        ModelNodePointer powerStatus;
+        ModelNodePointer logicalAddress;
+        
+        ModelNodePointer powerStatusCommand;
 };

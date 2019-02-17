@@ -16,10 +16,10 @@ class CecClient
         ~CecClient();
         void connect();
 
-        static CecClient *getInstance(const CecMqttClientProperties &properties, CecMqttClientModel *model);
+        static CecClient &getInstance(CecMqttClientProperties &properties, std::shared_ptr<CecMqttClientModel> model);
 
     private:
-        CecClient(const CecMqttClientProperties &properties, CecMqttClientModel *model);
+        CecClient(const CecMqttClientProperties &properties, std::shared_ptr<CecMqttClientModel> model);
         void updateGeneralModel();
         void updateDeviceModel();
         void clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType);
@@ -27,7 +27,7 @@ class CecClient
         void copyOSDDeviceNameToConfig(std::string &deviceName);
 
         CecMqttClientProperties properties;
-        CecMqttClientModel *model;
+        std::shared_ptr<CecMqttClientModel> model;
         CEC::ICECAdapter *adapter;
         CEC::ICECCallbacks *callbacks;
         CEC::libcec_configuration *config;
@@ -38,7 +38,7 @@ class CecClient
         static void static_commandReceivedHandler(void* UNUSED, const CEC::cec_command* command);
         static void static_alertHandler(void* UNUSED, const CEC::libcec_alert alert, const CEC::libcec_parameter param);
 
-        static CecClient *getInstance();
+        static CecClient &getInstance();
         static CecClient *singleton;
 
         static const std::map<CEC::cec_logical_address, std::string> CEC_LOGICAL_ADRESS_2_STRING_LITERAL;

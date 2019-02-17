@@ -13,10 +13,12 @@
 
 class MqttClient{
     public:
-        MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model);
+        MqttClient(const CecMqttClientProperties &properties, std::shared_ptr<CecMqttClientModel> model);
         ~MqttClient();
         void connect();
         
+        static const int DEFAULT_QOS;
+
     private:
         static const int MAX_CONNECT_ATTEMPTS;
         static const int CONNECT_TIME_OUT_MILLISECONDS;
@@ -25,7 +27,7 @@ class MqttClient{
         mqtt::connect_options connectionOptions;
         bool firstConnect;
         CecMqttClientProperties properties;
-        CecMqttClientModel *model;
+        std::shared_ptr<CecMqttClientModel> model;
         std::shared_ptr<spdlog::logger> logger;
         MqttClientCallback *mqttClientCallback;
 

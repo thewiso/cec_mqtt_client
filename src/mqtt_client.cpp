@@ -9,8 +9,9 @@
 
 const int MqttClient::CONNECT_TIME_OUT_MILLISECONDS = 3000;
 const int MqttClient::MAX_CONNECT_ATTEMPTS = 3;
+const int MqttClient::DEFAULT_QOS = 0;
 
-MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientModel *model){
+MqttClient::MqttClient(const CecMqttClientProperties &properties, std::shared_ptr<CecMqttClientModel> model){
     this->properties = properties;
     this->logger = spdlog::get(Utilities::MQTT_LOGGER_NAME);
     this->firstConnect = true;
@@ -19,10 +20,10 @@ MqttClient::MqttClient(const CecMqttClientProperties &properties, CecMqttClientM
 
     this->mqttClientCallback = new MqttClientCallback(*client);
     this->client->set_callback(*mqttClientCallback);
-
+    
     this->model = model;
     model->registerChangeHandler(std::bind( &MqttClient::modelNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
-     //TODO: QOS
+
     connectionOptions.set_keep_alive_interval(20);
     connectionOptions.set_clean_session(true);
     connectionOptions.set_automatic_reconnect(true);
@@ -43,7 +44,7 @@ void MqttClient::connect(){
                 std::this_thread::sleep_for(std::chrono::milliseconds(this->CONNECT_TIME_OUT_MILLISECONDS));
             }
             connectAttempt++;
-            logger.get()->info("Connecting to MQTT server (attempt {} of {})...", connectAttempt, MAX_CONNECT_ATTEMPTS);
+            logger->info("Connecting to MQTT server (attempt {} of {})...", connectAttempt, MAX_CONNECT_ATTEMPTS);
             
             try{
                 if(firstConnect){
@@ -53,7 +54,7 @@ void MqttClient::connect(){
                     client->reconnect()->wait();
                 }
             }catch(const mqtt::exception& ex){
-                logger.get()->warn("Exception during connecting: {}", ex.what());
+                logger->warn("Exception during connecting: {}", ex.what());
             }
         }
 
@@ -74,10 +75,10 @@ void MqttClient::modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEve
 
 void MqttClient::publish(std::string topic, std::string value){
     try{
-        (*logger).trace("Publishing value '{}' for topic '{}'", value, topic);
-        client->publish(topic, value.c_str(), strlen(value.c_str()), 0, false);
+        logger->trace("Publishing value '{}' for topic '{}'", value, topic);
+        client->publish(topic, value.c_str(), strlen(value.c_str()), MqttClient::DEFAULT_QOS, false);
     }catch (const mqtt::exception &ex) {
-        (*logger).error("Could not connect publish '{}' = '{}'. Reason: {}", topic, value, ex.get_message());
+        logger->error("Could not connect publish '{}' = '{}'. Reason: {}", topic, value, ex.get_message());
     }
 
    

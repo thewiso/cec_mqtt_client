@@ -3,16 +3,18 @@
 #include "model_node.h"
 
 class GeneralModel: public ModelNode{
+    typedef std::shared_ptr<ModelNode> ModelNodePointer;
+
     public:
         GeneralModel();
+        virtual void init();
 
-        //TODO: return references
-        ModelNode *getActiveSourceLogicalAddress();
-
-        ModelNode *getClientOSDNameCommand();
+        ModelNode &getActiveSourceLogicalAddress();
+        
+        ModelNode &getClientOSDNameCommand();
 
     private:
-        ModelNode *activeSourceLogicalAddress;
-        ModelNode *commands;
-        ModelNode *clientOSDNameCommand;
+        ModelNodePointer activeSourceLogicalAddress;
+        
+        ModelNodePointer clientOSDNameCommand;
 };

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <list>
+#include <vector>
 #include <string>
 #include <fstream>
+#include <memory>
 #include "property_holder.h"
 
 class Properties{
-    typedef std::list<PropertyHolder*> PropertyHolderList;
+    typedef std::vector<std::shared_ptr<PropertyHolder>> PropertyHolderList;
 
     public:
         void readFile(const std::string &filePath);
