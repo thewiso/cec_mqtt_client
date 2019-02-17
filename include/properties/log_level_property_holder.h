@@ -9,7 +9,7 @@ typedef spdlog::level::level_enum SpdLogLevel;
 
 class LogLevelPropertyHolder: public GenericPropertyHolder<spdlog::level::level_enum>{
     public:
-        LogLevelPropertyHolder(const std::string &name, SpdLogLevel *value, bool mandatory = false);
+        LogLevelPropertyHolder(const std::string &name, std::shared_ptr<SpdLogLevel> value, bool mandatory = false);
         
     protected:
         virtual SpdLogLevel parseValue(const std::string &valueString);

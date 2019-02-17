@@ -5,7 +5,7 @@
 #include <ios>
 #include <sstream>
 
-BoolPropertyHolder::BoolPropertyHolder(const std::string &name, bool *value, bool mandatory): GenericPropertyHolder(name, value, mandatory){
+BoolPropertyHolder::BoolPropertyHolder(const std::string &name, std::shared_ptr<bool> value, bool mandatory): GenericPropertyHolder(name, value, mandatory){
 
 }
         

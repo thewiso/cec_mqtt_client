@@ -21,12 +21,12 @@ class CecMqttClientProperties
     protected:
         virtual void fillPropertyMap();
         
-        std::string mqttBrokerAdress;
-        std::string mqttClientId;
-        std::string mqttTopicPrefix;
+        std::shared_ptr<std::string> mqttBrokerAdress;
+        std::shared_ptr<std::string> mqttClientId;
+        std::shared_ptr<std::string> mqttTopicPrefix;
 
-        std::string cecDeviceName;
+        std::shared_ptr<std::string> cecDeviceName;
 
-        bool loggerLogToConsole;
-        SpdLogLevel loggerLevel;
+        std::shared_ptr<bool> loggerLogToConsole;
+        std::shared_ptr<SpdLogLevel> loggerLevel;
 };

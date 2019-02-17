@@ -16,9 +16,9 @@ MqttClient::MqttClient(const CecMqttClientProperties &properties, std::shared_pt
     this->logger = spdlog::get(Utilities::MQTT_LOGGER_NAME);
     this->firstConnect = true;
     
-    this->client = new mqtt::async_client(this->properties.getMqttBrokerAdress(), this->properties.getMqttClientId());
+    this->client = std::make_unique<mqtt::async_client>(this->properties.getMqttBrokerAdress(), this->properties.getMqttClientId());
 
-    this->mqttClientCallback = new MqttClientCallback(*client);
+    this->mqttClientCallback = std::make_unique<MqttClientCallback>(*client);
     this->client->set_callback(*mqttClientCallback);
     
     this->model = model;
@@ -33,7 +33,6 @@ MqttClient::~MqttClient(){
     if(client->is_connected()){
         client->disconnect()->wait();
     }
-    delete client;
 }
 
 void MqttClient::connect(){

@@ -23,13 +23,13 @@ class MqttClient{
         static const int MAX_CONNECT_ATTEMPTS;
         static const int CONNECT_TIME_OUT_MILLISECONDS;
         
-        mqtt::async_client *client;
+        std::unique_ptr<mqtt::async_client> client;
         mqtt::connect_options connectionOptions;
         bool firstConnect;
         CecMqttClientProperties properties;
         std::shared_ptr<CecMqttClientModel> model;
         std::shared_ptr<spdlog::logger> logger;
-        MqttClientCallback *mqttClientCallback;
+        std::unique_ptr<MqttClientCallback> mqttClientCallback;
 
         void publish(std::string topic, std::string value);
         void modelNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType);

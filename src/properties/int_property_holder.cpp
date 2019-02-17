@@ -2,7 +2,7 @@
 #include "property_exception.h"
 #include <stdexcept> 
 
-IntPropertyHolder::IntPropertyHolder(const std::string &name, int *value, bool mandatory): GenericPropertyHolder(name, value, mandatory){
+IntPropertyHolder::IntPropertyHolder(const std::string &name, std::shared_ptr<int> value, bool mandatory): GenericPropertyHolder(name, value, mandatory){
 
 }
         

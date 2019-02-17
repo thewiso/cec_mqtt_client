@@ -11,7 +11,7 @@ MqttClientCallback::MqttClientCallback(mqtt::async_client &client): client(clien
 }
 
 void MqttClientCallback::connected(const std::string &cause){
-    logger.get()->info("Connecting to MQTT server succedeed.");
+    logger->info("Connecting to MQTT server succedeed.");
 
     subscriptionNodesVectorMutex.lock();
     for(auto it = subscriptionNodes.begin(); it != subscriptionNodes.end(); ++it){
@@ -23,12 +23,12 @@ void MqttClientCallback::connected(const std::string &cause){
 //callback functions:
 
 void MqttClientCallback::connection_lost(const std::string &cause){
-    logger.get()->warn("Lost connection to broker");
+    logger->warn("Lost connection to broker");
 }
 
 void MqttClientCallback::message_arrived(mqtt::const_message_ptr message){
     std::string topic = message->get_topic();
-    logger.get()->trace("Message of subscribed topic '{}' arrived: '{}'", topic, message->get_payload_str());
+    logger->trace("Message of subscribed topic '{}' arrived: '{}'", topic, message->get_payload_str());
     auto iterator = std::find_if(subscriptionNodes.begin(), subscriptionNodes.end(), [topic] (ModelNode *modelNode){
         return modelNode->getMqttPath() == topic;
     });
@@ -41,7 +41,7 @@ void MqttClientCallback::message_arrived(mqtt::const_message_ptr message){
 }
 
 void MqttClientCallback::delivery_complete(mqtt::delivery_token_ptr token){
-    logger.get()->error("Published message for topic '{}' is delivered: '{}'", token->get_message()->get_topic(), token->get_message()->get_payload_str());
+    logger->error("Published message for topic '{}' is delivered: '{}'", token->get_message()->get_topic(), token->get_message()->get_payload_str());
     
 }
 
@@ -50,14 +50,14 @@ void MqttClientCallback::delivery_complete(mqtt::delivery_token_ptr token){
 void MqttClientCallback::on_failure(const mqtt::token &token) {
     mqtt::const_string_collection_ptr topics = token.get_topics();
     for(int i = 0; i < (*topics).size(); i++){
-        logger.get()->error("Subscribtion for topic '{}' failed: {}", (*topics)[i], token.get_message_id());
+        logger->error("Subscribtion for topic '{}' failed: {}", (*topics)[i], token.get_message_id());
     }
 }
 
 void MqttClientCallback::on_success(const mqtt::token &token) {
     mqtt::const_string_collection_ptr topics = token.get_topics();
     for(int i = 0; i < (*topics).size(); i++){
-        logger.get()->debug("Subscribtion for topic '{}' succeeded.", (*topics)[i]);
+        logger->debug("Subscribtion for topic '{}' succeeded.", (*topics)[i]);
     }
 }
 
@@ -73,9 +73,9 @@ void MqttClientCallback::addNodeForSubscription(ModelNode &node){
 void MqttClientCallback::subscribeToNode(ModelNode &node){
     try{
         std::string mqttPath = node.getMqttPath();
-        logger.get()->debug("(Re)Subscribing to mqtt topic '{}'", mqttPath);
+        logger->debug("(Re)Subscribing to mqtt topic '{}'", mqttPath);
         client.subscribe(mqttPath, MqttClient::DEFAULT_QOS, nullptr, *this);
     }catch(const std::exception &e){
-        logger.get()->error("Exception occured while subscribing to mqtt topic: {}", e.what());
+        logger->error("Exception occured while subscribing to mqtt topic: {}", e.what());
     }
 }

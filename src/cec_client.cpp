@@ -11,6 +11,9 @@
 #include <iostream>
 #include <typeinfo>
 #include <stdexcept>
+#include <chrono>
+#include <sstream>
+#include <stdexcept>
 
 // cecloader.h uses std::cout _without_ including iosfwd or iostream
 // Furthermore is uses cout and not std::cout
@@ -58,29 +61,38 @@ const std::map<CEC::cec_power_status, std::string> CecClient::CEC_POWER_STATUS_2
     {CEC::cec_power_status::CEC_POWER_STATUS_UNKNOWN                    , "UNKNOWN"}
 };
 
+const std::map<CEC::libcec_alert, std::string> CecClient::CEC_ALERT_2_STRING_LITERAL = {
+    {CEC::libcec_alert::CEC_ALERT_SERVICE_DEVICE        , "Service device"},
+    {CEC::libcec_alert::CEC_ALERT_CONNECTION_LOST       , "Connection lost"},
+    {CEC::libcec_alert::CEC_ALERT_PERMISSION_ERROR      , "Permission error"},
+    {CEC::libcec_alert::CEC_ALERT_PORT_BUSY             , "Port busy"},
+    {CEC::libcec_alert::CEC_ALERT_PHYSICAL_ADDRESS_ERROR, "Physical address error"},
+    {CEC::libcec_alert::CEC_ALERT_TV_POLL_FAILED        , "TV poll failed"}
+};
+
 CecClient *CecClient::singleton = nullptr;
 
 CecClient::CecClient(const CecMqttClientProperties &properties, std::shared_ptr<CecMqttClientModel> model){
     this->properties = properties;
     this->model = model;
     this->adapter = nullptr;
-    this->callbacks = new CEC::ICECCallbacks();
-    this->config = new CEC::libcec_configuration();
     this->logger = spdlog::get(Utilities::CEC_LOGGER_NAME);
 
     model->getGeneralModel().getClientOSDNameCommand().registerChangeHandler(std::bind( &CecClient::clientOSDNameCommandNodeChangeHandler, this, std::placeholders::_1, std::placeholders::_2), true);
 
     bcm_host_init();
 
+    callbacks = std::make_shared<CEC::ICECCallbacks>();
     callbacks->Clear();
     callbacks->sourceActivated = &static_sourceActivatedHandler;
     callbacks->commandReceived = &static_commandReceivedHandler;
     callbacks->alert = &static_alertHandler;
 
+    config = std::make_shared<CEC::libcec_configuration>();
     config->Clear();    
     config->clientVersion = CEC::LIBCEC_VERSION_CURRENT;
     config->bActivateSource = 0;
-    config->callbacks = callbacks;
+    config->callbacks = callbacks.get();
     config->deviceTypes.Add(CEC::CEC_DEVICE_TYPE_PLAYBACK_DEVICE);
 
     std::string deviceName = this->properties.getCecDeviceName();
@@ -91,6 +103,7 @@ CecClient::~CecClient(){
     if(adapter != nullptr){
         adapter->Close();
         UnloadLibCec(adapter);
+        delete adapter;
     }
 }
 
@@ -108,36 +121,32 @@ CecClient &CecClient::getInstance(CecMqttClientProperties &properties, std::shar
 }
 
 void CecClient::static_sourceActivatedHandler(void* UNUSED, const CEC::cec_logical_address logicalAddress, const uint8_t bActivated){
+    getInstance().logger->debug("CEC adapter reported a new source actived: {}", CecClient::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(logicalAddress));
     getInstance().updateGeneralModel();
-    //TODO: debug log
 }
 
 void CecClient::static_commandReceivedHandler(void* UNUSED, const CEC::cec_command* command){
     //if no poll command:
     if(command->opcode_set == 1){
+        if(getInstance().logger->should_log(spdlog::level::level_enum::trace)){
+            std::string initiator = CecClient::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->initiator);
+            std::string destination = CecClient::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->destination);
+            std::stringstream commandStream;
+            commandStream << std::hex << "0x" << (int)command->opcode;
+            getInstance().logger->trace("CEC adapter reported command recieved from {} to {}: {} (For more information use www.cec-o-matic.com", initiator, destination, commandStream.str());
+        }
+        
         if (std::find(std::begin(RELEVANT_OPCODES), std::end(RELEVANT_OPCODES), command->opcode) != std::end(RELEVANT_OPCODES)){
             getInstance().updateDeviceModel();
             getInstance().updateGeneralModel();
         }
-        //TODO: debug log
-        if(command->opcode == CEC::cec_opcode::CEC_OPCODE_ACTIVE_SOURCE){
-            CEC::cec_datapacket parameter = command->parameters;
-            std::string parameterString;
-            for(int i=0; i<parameter.size; i++){
-                parameterString += ":" + std::to_string(parameter[i]);
-            }
-            // cout << "ActiveSource from " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->initiator) << " to " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->destination) << " parameter: '" << parameterString << "'\n";
-        }
-        // cout << "from " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->initiator) << " to " << CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->destination) << " command: " << std::hex << "0x" << (int)command->opcode << "\n";
     }
     
 }
 
 void CecClient::static_alertHandler(void* UNUSED, const CEC::libcec_alert alert, const CEC::libcec_parameter param){
     cout << "alert\n";
-        //TODO: alert callbacks usage for connection lost handling!
-        //TODO: debug log
-
+    getInstance().logger->warn("CEC adapter reported an alert: {}", CecClient::CEC_ALERT_2_STRING_LITERAL.at(alert));
 }
         
 
@@ -145,23 +154,25 @@ void CecClient::static_alertHandler(void* UNUSED, const CEC::libcec_alert alert,
 void CecClient::connect(){
     logger->info("Connecting to CEC Hub...");
     
-    adapter = LibCecInitialise(config);
-    if( !adapter )
+    adapter = LibCecInitialise(config.get());
+    if(!adapter)
     { 
-        //TODO: throw exception?
-        std::cerr << "Failed loading libcec.so\n"; 
+        logger->error("Failed loading libcec.so"); 
+        throw std::runtime_error("Could not connect to CEC Hub");
     }
     std::array<CEC::cec_adapter_descriptor, 10> devices;
     int8_t devices_found = adapter->DetectAdapters(devices.data(), devices.size(), nullptr, false /*quickscan*/);
-    if( devices_found <= 0)
+    if(devices_found <= 0)
     {
-        std::cerr << "Could not automatically determine the cec adapter devices\n";
+        logger->error("Could not automatically determine the cec adapter devices");
         UnloadLibCec(adapter);
-        //TODO: throw exception
+        throw std::runtime_error("Could not connect to CEC Hub");
     }
 
-    if(adapter->Open(devices[0].strComName)){
-        //TODO: throw exception
+    if(!adapter->Open(devices[0].strComName)){
+        logger->error("Failed to open the CEC device on port {}", devices[0].strComName);
+        UnloadLibCec(adapter);
+        throw std::runtime_error("Could not connect to CEC Hub");
     }
 
     logger->info("Connecting to CEC Hub succedeed.");
@@ -183,10 +194,11 @@ void CecClient::updateGeneralModel(){
 
 void CecClient::updateDeviceModel(){
     logger->debug("Updating DeviceModel");
-    //TODO: log debug duration of method
-    //TODO: when to use adapter->RescanActiveDevices ?
+    auto start = std::chrono::high_resolution_clock::now();
+
     adapterMutex.lock();
-    CEC::cec_logical_addresses activeDevices = adapter->GetActiveDevices();
+        adapter->RescanActiveDevices();
+        CEC::cec_logical_addresses activeDevices = adapter->GetActiveDevices();
     adapterMutex.unlock();
 
     int activeDevicesLength = (sizeof(activeDevices.addresses)/sizeof(*activeDevices.addresses));
@@ -222,6 +234,12 @@ void CecClient::updateDeviceModel(){
 
         }
     } 
+
+    if(logger->should_log(spdlog::level::level_enum::debug)){
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+        logger->debug("Updating DeviceModel took {} milliseconds", elapsed.count());
+    }
 }
 
 void CecClient::clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, ModelNodeChangeEventType modelNodeChangeEventType){
@@ -232,7 +250,7 @@ void CecClient::clientOSDNameCommandNodeChangeHandler(ModelNode &modelNode, Mode
         logger->debug("Changing client OSD name to {}...", deviceName);
         
         adapterMutex.lock();
-        bool success = adapter->SetConfiguration(config);
+        bool success = adapter->SetConfiguration(config.get());
         adapterMutex.unlock();
 
         if(success){

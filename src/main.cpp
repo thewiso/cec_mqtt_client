@@ -20,6 +20,11 @@
 
 
 std::atomic<bool> interrupt(false); 
+
+const std::string LOG_FILE_PATH = "cec_mqtt_client_log.txt";
+//1024 * 1024 * 5 = 5 Mebibyte
+const int LOG_FILE_SIZE = 1024 * 1024 * 5;
+
 void handle_signal(int signal)
 {
     interrupt.store(true);
@@ -28,9 +33,7 @@ void handle_signal(int signal)
 
 int main(int argc, char* argv[])
 {
-    //TODO: log file path, size as constant
-    //1024 * 1024 * 5 = 5 Mebibyte, 2 log filesspdlog::level::debug
-    auto sharedFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("cec_mqtt_client_log.txt", 1024 * 1024 * 5, 2);
+    auto sharedFileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(LOG_FILE_PATH, LOG_FILE_SIZE, 2);
     auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     spdlog::sinks_init_list loggerSinks = {sharedFileSink, consoleSink};
     
@@ -41,10 +44,6 @@ int main(int argc, char* argv[])
     spdlog::register_logger(mqttLogger);
     spdlog::register_logger(generalLogger);
 
-    //TODO: implement usage of auto (e.g. in for loop iterator)
-    //TODO: smart pointer??
-    //TODO: ptr.get() durch *ptr ersetzen!
-    //TODO: general update command
     signal(SIGINT, handle_signal);
 
     try{

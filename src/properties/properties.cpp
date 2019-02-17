@@ -19,8 +19,6 @@ void Properties::readFile(const std::string &filePath){
 }
 
 void Properties::parseFile(std::ifstream &fileStream){
-    
-    //TODO: handle not filled properties
     std::string currentLine;
     while (std::getline(fileStream, currentLine))
     {
@@ -45,7 +43,7 @@ void Properties::parseFile(std::ifstream &fileStream){
 }
 
 void Properties::checkMandatoryProperties(){
-    for(PropertyHolderList::iterator it = propertyHolders.begin(); it != propertyHolders.end(); ++it) {
+    for(auto it = propertyHolders.begin(); it != propertyHolders.end(); ++it) {
         if((*it)->isMandatory() && !(*it)->isValueGiven()){
             throw PropertyException("Mandatory property '" + (*it)->getName() + "' not defined in property file");
         }

@@ -10,7 +10,7 @@ void DeviceModel::init(){
     this->powerStatusCommand = std::make_shared<ModelNode>("powerStatus", true, std::string(), true, true);
     ModelNodePointer commands = std::make_shared<ModelNode>("COMMANDS");
     commands->addChild(powerStatusCommand);
-logger->info("init DeviceModel");
+
     addChild(name);
     addChild(isActive);
     addChild(powerStatus);

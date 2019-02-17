@@ -5,10 +5,11 @@
 
 #include <exception>
 #include <string>
+#include <memory>
 
 template<class T> class GenericPropertyHolder: public PropertyHolder{
     public:
-        GenericPropertyHolder(const std::string &name, T *value, bool mandatory = false): PropertyHolder(name, mandatory){
+        GenericPropertyHolder(const std::string &name, std::shared_ptr<T> value, bool mandatory = false): PropertyHolder(name, mandatory){
             this->value = value;
         }
 
@@ -25,7 +26,7 @@ template<class T> class GenericPropertyHolder: public PropertyHolder{
         virtual T parseValue(const std::string &valueString) = 0;
         
     private:
-        T *value;
+        std::shared_ptr<T> value;
         
 
 };

@@ -5,7 +5,7 @@
 #include <map>
 #include <stdexcept>
         
-LogLevelPropertyHolder::LogLevelPropertyHolder(const std::string &name, SpdLogLevel *value, bool mandatory): GenericPropertyHolder(name, value, mandatory){
+LogLevelPropertyHolder::LogLevelPropertyHolder(const std::string &name, std::shared_ptr<SpdLogLevel> value, bool mandatory): GenericPropertyHolder(name, value, mandatory){
 }
         
 SpdLogLevel LogLevelPropertyHolder::parseValue(const std::string &valueString){

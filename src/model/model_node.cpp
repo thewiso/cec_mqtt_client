@@ -114,7 +114,7 @@ const std::string &ModelNode::getValue(){
 void ModelNode::setValue(const std::string &value, bool triggerChange){
     //whole mqtt path should only be generated if the log level is fitting:
     if(logger->should_log(spdlog::level::level_enum::trace)){
-        logger.get()->trace("setValue with value '{}' on node '{}'", value, getMqttPath());
+        logger->trace("setValue with value '{}' on node '{}'", value, getMqttPath());
     }
     
     if(!valueNode){

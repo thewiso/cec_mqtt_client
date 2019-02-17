@@ -29,8 +29,8 @@ class CecClient
         CecMqttClientProperties properties;
         std::shared_ptr<CecMqttClientModel> model;
         CEC::ICECAdapter *adapter;
-        CEC::ICECCallbacks *callbacks;
-        CEC::libcec_configuration *config;
+        std::shared_ptr<CEC::ICECCallbacks> callbacks;
+        std::shared_ptr<CEC::libcec_configuration> config;
         std::mutex adapterMutex;
         std::shared_ptr<spdlog::logger> logger;
         
@@ -43,6 +43,7 @@ class CecClient
 
         static const std::map<CEC::cec_logical_address, std::string> CEC_LOGICAL_ADRESS_2_STRING_LITERAL;
         static const std::map<CEC::cec_power_status, std::string> CEC_POWER_STATUS_2_STRING_LITERAL;
+        static const std::map<CEC::libcec_alert, std::string> CEC_ALERT_2_STRING_LITERAL;
         static const CEC::cec_opcode RELEVANT_OPCODES[];
         static const int MAX_OSD_NAME_LENGTH;
 
