@@ -1,6 +1,6 @@
 # CEC MQTT Client
 
-A client for monitoring and controlling cec (hdmi) devices via mqtt.
+A client for monitoring and controlling CEC (HDMI) devices via MQTT.
 
 This software contains a mqtt client which subscribes and publishes to a given mqtt broker.
 It can be used for home automation.
