@@ -5,7 +5,7 @@ A client for monitoring and controlling CEC (HDMI) devices via MQTT.
 This software contains a mqtt client which subscribes and publishes to a given mqtt broker.
 It can be used for home automation.
 
-It is developed, tested and maintained on **Raspberry Pi**
+It is developed, tested and maintained on **Raspian**
 
 Visit the [wiki](https://github.com/thewiso/cec_mqtt_client/wiki) for more information.
 
