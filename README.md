@@ -56,7 +56,7 @@ TODO:
 - [x] include apache paho
 - [ ] instruction for library installation/cmake arguments
 - [x] log file 
-- [ ] TODOs in files
+- [x] TODOs in files
 - [x] subdirectories for different topics in include&src (properties, main, model)
 - [ ] run application as daemon
 - [ ] code doc
