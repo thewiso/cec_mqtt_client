@@ -17,7 +17,7 @@ I am using
 
 
 
-## IT IS NOT IN A USABLE STATE YET
+## IT IS IN AN ALPHA STATE YET
 
 ## Features
 
@@ -27,7 +27,7 @@ I am using
 
 Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
-Name | YES | YES | NO
+Name | YES | YES | YES
  
  
  
@@ -36,19 +36,18 @@ Name | YES | YES | NO
 
 Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
-Power state | YES | YES | NO
-Active source (ID) | YES | YES | NO
+Power state | YES | YES | YES
+Active source (ID) | YES | NO | YES
 
 
 #### Other connected Devices
 
 Description | Read (publish) | Write (subscribe) | Implemented
 ------------|-------------|----------------|-------------------
-ID | YES | NO | NO
-Name | YES | NO | NO
-Active | YES | NO | NO
-Power state | YES | YES | NO
-Type | YES | NO | NO
+Name | YES | NO | YES
+Active | YES | NO | YES
+Power state | YES | YES | YES
+Type | YES | NO | YES
 
 
 
