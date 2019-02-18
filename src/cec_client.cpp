@@ -14,6 +14,7 @@
 #include <chrono>
 #include <sstream>
 #include <stdexcept>
+#include <iomanip>
 
 // cecloader.h uses std::cout _without_ including iosfwd or iostream
 // Furthermore is uses cout and not std::cout
@@ -25,9 +26,12 @@ using std::endl;
 
 //opcodes from cec_commands that should trigger a model update
 const CEC::cec_opcode CecClient::RELEVANT_OPCODES[] = {
-    CEC::cec_opcode::CEC_OPCODE_ACTIVE_SOURCE,      //is sent if TV is switched ON and
-                                                    //is sent if external Device is switchted ON/OFF
-    CEC::cec_opcode::CEC_OPCODE_STANDBY             //is sent if TV is switched OFF
+    CEC::cec_opcode::CEC_OPCODE_REQUEST_ACTIVE_SOURCE,
+    CEC::cec_opcode::CEC_OPCODE_ACTIVE_SOURCE,              //is sent if TV is switched ON and
+                                                            //is sent if external Device is switchted ON/OFF
+    CEC::cec_opcode::CEC_OPCODE_REPORT_POWER_STATUS,        //is sent if TV is switched OFF
+    CEC::cec_opcode::CEC_OPCODE_STANDBY
+    
 };
 
 const int CecClient::MAX_OSD_NAME_LENGTH = 13;
@@ -71,6 +75,10 @@ const std::map<CEC::libcec_alert, std::string> CecClient::CEC_ALERT_2_STRING_LIT
 };
 
 CecClient *CecClient::singleton = nullptr;
+
+CEC::cec_command CecClient::lastCommand;
+std::mutex CecClient::lastCommandMutex;
+
 
 CecClient::CecClient(const CecMqttClientProperties &properties, std::shared_ptr<CecMqttClientModel> model){
     this->properties = properties;
@@ -132,13 +140,30 @@ void CecClient::static_commandReceivedHandler(void* UNUSED, const CEC::cec_comma
             std::string initiator = CecClient::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->initiator);
             std::string destination = CecClient::CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(command->destination);
             std::stringstream commandStream;
-            commandStream << std::hex << "0x" << (int)command->opcode;
+            commandStream << std::hex << (int)command->initiator << (int)command->destination << ":";
+            commandStream << std::setfill('0') << std::setw (2) << (int)command->opcode;
+            for(int i = 0; i< command->parameters.size; i++){  
+                commandStream << ":" << std::setfill('0') << std::setw (2) << (int)command->parameters.data[i];
+            }
             getInstance().logger->trace("CEC adapter reported command recieved from {} to {}: {} (For more information use www.cec-o-matic.com", initiator, destination, commandStream.str());
         }
         
+        //command->initiator == CEC::cec_logical_address::CECDEVICE_TV &&
         if (std::find(std::begin(RELEVANT_OPCODES), std::end(RELEVANT_OPCODES), command->opcode) != std::end(RELEVANT_OPCODES)){
-            getInstance().updateDeviceModel();
-            getInstance().updateGeneralModel();
+            lastCommandMutex.lock();
+                if(lastCommand.initiator != command->initiator
+                || lastCommand.destination != command->destination
+                || lastCommand.opcode != command->opcode){
+
+                    lastCommand = *command;
+                    lastCommandMutex.unlock();
+
+                    getInstance().updateDeviceModel();
+                    getInstance().updateGeneralModel();
+                }
+
+            lastCommandMutex.unlock();
+          
         }
     }
     
@@ -188,8 +213,6 @@ void CecClient::updateGeneralModel(){
     adapterMutex.unlock();
 
     model->getGeneralModel().getActiveSourceLogicalAddress().setValue(CEC_LOGICAL_ADRESS_2_STRING_LITERAL.at(activeSource));
-
-    //TODO: updates after commands should be triggered (name changed -> configuration changed?)
 }
 
 void CecClient::updateDeviceModel(){

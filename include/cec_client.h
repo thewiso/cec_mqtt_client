@@ -40,6 +40,8 @@ class CecClient
 
         static CecClient &getInstance();
         static CecClient *singleton;
+        static std::mutex lastCommandMutex;
+        static CEC::cec_command lastCommand;
 
         static const std::map<CEC::cec_logical_address, std::string> CEC_LOGICAL_ADRESS_2_STRING_LITERAL;
         static const std::map<CEC::cec_power_status, std::string> CEC_POWER_STATUS_2_STRING_LITERAL;
